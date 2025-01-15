@@ -1,0 +1,28 @@
+
+## With R 3.1.0 or later, you can uncomment the following line to tell R to
+## enable compilation with C++11 (where available)
+##
+## Also, OpenMP support in Armadillo prefers C++11 support. However, for wider
+## availability of the package we do not yet enforce this here.  It is however
+## recommended for client packages to set it.
+##
+## And with R 3.4.0, and RcppArmadillo 0.7.960.*, we turn C++11 on as OpenMP
+## support within Armadillo prefers / requires it
+#CXX_STD = CXX11
+
+## Setting the correct compiler for Macs
+#CC = clang
+#CXX = clang++
+
+
+## Remove openMP flags from Mac build, which does not support them
+#SHLIB_OPENMP_CFLAGS=
+#SHLIB_OPENMP_CXXFLAGS=
+
+
+## Allowing larger memory allocations to arrays in Rcpp Armadillo
+## Remove stupid warnings from Rcpp Eigen (warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]    #pragma clang diagnostic pop)
+PKG_CXXFLAGS = $(SHLIB_OPENMP_CXXFLAGS) -DARMA_64BIT_WORD=1 -DEIGEN_PERMANENTLY_DISABLE_STUPID_WARNINGS -DNDEBUG -DARMA_NO_DEBUG -DEIGEN_NO_DEBUG
+
+## Compilation
+PKG_LIBS = $(SHLIB_OPENMP_CXXFLAGS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)

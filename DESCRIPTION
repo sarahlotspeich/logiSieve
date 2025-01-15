@@ -1,0 +1,20 @@
+Package: LogiSieve
+Type: Package
+Title: Logistic Regression with Covariate Error via Sieve Maximum Likelihood Estimation
+Version: 1.0.0
+Authors@R: c(person(given = "Sarah", family = "Lotspeich", role = c("aut","cre"), email = "lotspes@wfu.edu"))
+Description: Logistic Regression with Covariate Error via Sieve Maximum Likelihood Estimation (SMLE), drawing upon a validated subset with both error-prone and error-free information.
+License: GPL (>= 2)
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2
+Depends: Rcpp (>= 1.0.7), R (>= 3.5.0)
+LinkingTo:
+    Rcpp,
+    RcppArmadillo,
+    RcppEigen
+Suggests: 
+    MASS,
+    splines,
+    tibble
+LazyData: true
