@@ -30,7 +30,7 @@ NULL
 #' @param modifyW_T If false, instantly returns w_t_original
 #' @noRd
 .lengthenWT <- function(w_t_original, n, modifyW_T = TRUE) {
-    .Call(`_LogiSieve_lengthenWT`, w_t_original, n, modifyW_T)
+    .Call('_LogiSieve_lengthenWT', PACKAGE = 'LogiSieve', w_t_original, n, modifyW_T)
 }
 
 #' Calculate Mu
@@ -42,7 +42,7 @@ NULL
 #' @param prev The previous iteration of the design matrix
 #' @noRd
 .calculateMu <- function(design_mat, prev) {
-    .Call(`_LogiSieve_calculateMu`, design_mat, prev)
+    .Call('_LogiSieve_calculateMu', PACKAGE = 'LogiSieve', design_mat, prev)
 }
 
 #' Calculate gradient
@@ -58,7 +58,7 @@ NULL
 #' @param modifyW_T Whether to add ones to the beginning of w_t
 #' @noRd
 .calculateGradient <- function(w_t, n, design_mat, Y_col, muVector, modifyW_T = FALSE) {
-    .Call(`_LogiSieve_calculateGradient`, w_t, n, design_mat, Y_col, muVector, modifyW_T)
+    .Call('_LogiSieve_calculateGradient', PACKAGE = 'LogiSieve', w_t, n, design_mat, Y_col, muVector, modifyW_T)
 }
 
 #' Calculate Hessian Matrix
@@ -73,7 +73,7 @@ NULL
 #' @param modifyW_T Whether to add ones to the beginning of w_t
 #' @noRd
 .calculateHessian <- function(design_mat, w_t, muVector, n, mus, modifyW_T = FALSE) {
-    .Call(`_LogiSieve_calculateHessian`, design_mat, w_t, muVector, n, mus, modifyW_T)
+    .Call('_LogiSieve_calculateHessian', PACKAGE = 'LogiSieve', design_mat, w_t, muVector, n, mus, modifyW_T)
 }
 
 #' Calculate pYstar
@@ -87,6 +87,6 @@ NULL
 #' @param Y_unval_index Which column of comp_dat_all houses the unvalidated Y variable
 #' @noRd
 .pYstarCalc <- function(gamma_design_mat, startRow, prev_gamma, comp_dat_all, Y_unval_index) {
-    .Call(`_LogiSieve_pYstarCalc`, gamma_design_mat, startRow, prev_gamma, comp_dat_all, Y_unval_index)
+    .Call('_LogiSieve_pYstarCalc', PACKAGE = 'LogiSieve', gamma_design_mat, startRow, prev_gamma, comp_dat_all, Y_unval_index)
 }
 
