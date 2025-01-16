@@ -1,4 +1,4 @@
-Package: LogiSieve
+Package: logiSieve
 Type: Package
 Title: Logistic Regression with Covariate Error via Sieve Maximum Likelihood Estimation
 Version: 1.0.0

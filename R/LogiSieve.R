@@ -26,7 +26,7 @@
 #'
 #' @export
 
-LogiSieve = function(Y = NULL, X_unval = NULL, X = NULL, Z = NULL, Bspline = NULL, data = NULL, hn_scale = 1, noSE = FALSE, TOL = 1E-4, MAX_ITER = 1000, verbose = FALSE) {
+logiSieve = function(analysis_formula, error_formula, data = NULL, hn_scale = 1, noSE = FALSE, TOL = 1E-4, MAX_ITER = 1000, verbose = FALSE) {
   # Extract variable names from user-specified formulas
   Y = as.character(as.formula(analysis_formula))[2] ## outcome
   X = as.character(as.formula(error_formula))[2] ## error-free covariate
