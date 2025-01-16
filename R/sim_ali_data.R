@@ -2,29 +2,33 @@
 #'
 #' @param tpr true positive rate for the error-prone ALI. Default is \code{tpr = 0.9}.
 #' @param fpr false positive rate for the error-prone ALI. Default is \code{fpr = 0.1}.
-#' @audit_recovery proportion of missing data recovered through the validation study. Default is \code{audit_recovery = 1}.
+#' @param audit_recovery proportion of missing data recovered through the validation study. Default is \code{audit_recovery = 1}.
 #' @param N total sample size (phase I) for the error-prone EHR data. Default is \code{N = 1000}.
 #' @param n validation sample size (phase II) for the chart review data (must have \code{N > n}). Default is \code{n = 100}.
 #' @param lambda_age mean of the Poisson distribution for age. Default is \code{lambda_age = 4.566}.
-#'
-#' @return dataframe with the following columns
-#' \item{coefficients}{Stores the analysis results.}
-#' \item{covariance}{Stores the covariance matrix of the regression coefficient estimates.}
-#' \item{converge}{In parameter estimation, if the EM algorithm converges, then \code{converge = TRUE}. Otherwise, \code{converge = FALSE}.}
-#' \item{converge_cov}{In variance estimation, if the EM algorithm converges, then \code{converge_cov = TRUE}. Otherwise, \code{converge_cov = FALSE}.}
-#' \item{converge_msg}{In parameter estimation, if the EM algorithm does not converge, then \code{converged_msg} is a string description.}
+#' @param betas vector of 3 coefficients for the analysis model (intercept, log odds ratio for X, and log odds ratio for Z). Default is \code{betas = c(-1.93, 1.88, 0.10)}.
+#' @param pS vector of 10 probabilities for the components of the ALI being "yes". Default is \code{pS = c(0.2500000, 0.9870130, 0.4549098, 0.1450000, 0.0580000, 0.2490119, 0.3138501, 0.3316391, 0.3111111, 0.0000000)}. 
+#' @param pM vector of 10 probabilities for the components of the ALI being missing. Default is \code{pM = c(0.996, 0.153, 0.002, 0.000, 0.000, 0.494, 0.213, 0.213, 0.955, 0.983)}. 
+#' @return dataframe with the following columns:
+#' \item{id}{Simulated identifiers}
+#' \item{X}{True ALI}
+#' \item{Xstar}{Unvalidated ALI (from the EHR)}
+#' \item{Xval}{Validated ALI (from the chart review)}
+#' \item{Y}{Indicator of healthcare utilization}
+#' \item{Z}{Age at first encounter}
 #' @export
-#'
-beta0 = -1.93 ## intercept in model of Y|X,Z
-beta1 = 1.88 ## coefficient on X in model of Y|X,Z
-beta2 = 0.10 ## coefficient on Z in model of Y|X,Z
-pS = c(0.2500000, 0.9870130, 0.4549098, 0.1450000, 0.0580000,
-       0.2490119, 0.3138501, 0.3316391, 0.3111111, 0.0000000) ## probability of stressor = YES
-pM = c(0.996, 0.153, 0.002, 0.000, 0.000,
-       0.494, 0.213, 0.213, 0.955, 0.983) ## probability of stressor = NA
 
 sim_ali_data = function(tpr = 0.9, fpr = 0.1, audit_recovery = 1, N = 1000, n = 100,
-                        lambda_age = 4.566, beta0 = -1.93, beta1 = 1.88, beta2 = 0.10) {
+                        lambda_age = 4.566, betas = c(-1.93, 1.88, 0.10), 
+                        pS = c(0.2500000, 0.9870130, 0.4549098, 0.1450000, 0.0580000,
+                               0.2490119, 0.3138501, 0.3316391, 0.3111111, 0.0000000),
+                        pM = c(0.996, 0.153, 0.002, 0.000, 0.000,
+                               0.494, 0.213, 0.213, 0.955, 0.983)) {
+  ## Separate beta coefficients
+  beta0 = betas[1] ### intercept 
+  beta1 = betas[2] ## log OR on X (given Z)
+  beta2 = betas[3] ## log OR on Z (given X)
+  
   ## Simulate continuous error-free covariate: age at first encounter
   ### from Poisson(lambda_age)
   Z = rpois(n = N,
