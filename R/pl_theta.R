@@ -17,9 +17,8 @@
 #' @param MAX_ITER Maximum number of iterations allowed in the EM algorithm.
 #' @return Profile likelihood for `theta` after perturbing element `k` by `h_N`.
 
-pl_theta <- function(k, theta, h_N, n, N, Y, X_val, C, Bspline, 
-                     comp_dat_all, theta_pred, p0 = NULL, p_val_num = NULL, 
-                     TOL, MAX_ITER) {
+pl_theta <- function(k, theta, h_N, n, N, pY_X, Bspline, comp_dat_all, 
+                     p0 = NULL, p_val_num = NULL, TOL, MAX_ITER) {
   pert <- theta
   pert[k] <- pert[k] + h_N
   pl_params <- profile_out(theta = pert,
