@@ -31,14 +31,14 @@ logiSieve = function(analysis_formula, error_formula, data, initial_lr_params = 
   # Extract variable names from user-specified formulas
   Y_unval = NULL ## no errors in outcome
   X_unval = NULL ## placeholder (don't need it)
-  Y = as.character(as.formula(analysis_formula))[2] ## outcome
-  X = as.character(as.formula(error_formula))[2] ## error-free covariate
+  Y_val = as.character(as.formula(analysis_formula))[2] ## outcome
+  X_val = as.character(as.formula(error_formula))[2] ## error-free covariate
   C = setdiff(x = unlist(strsplit(x = gsub(pattern = " ",
                                            replacement = "",
                                            x = as.character(as.formula(analysis_formula))[3]),
                                   split = "+",
                                   fixed = TRUE)),
-              y = X)
+              y = X_val)
   Bspline = unlist(strsplit(x = gsub(pattern = " ",
                                      replacement = "",
                                      x = as.character(as.formula(error_formula))[3]),
@@ -46,7 +46,7 @@ logiSieve = function(analysis_formula, error_formula, data, initial_lr_params = 
                             fixed = TRUE))
   
   # Create validation indicator 
-  data$V = as.numeric(!is.na(data[, X])) ## = 1 if validated, = 0 otherwise
+  data$V = as.numeric(!is.na(data[, X_val])) ## = 1 if validated, = 0 otherwise
   
   # Save sample sizes ---------------------------------------------
   N = nrow(data) ## total (phase I)
