@@ -10,7 +10,7 @@ pl_theta(
   h_N,
   n,
   N,
-  pY_X,
+  pYgivX_unval,
   Y,
   X_val,
   C,
@@ -33,7 +33,7 @@ pl_theta(
 
 \item{N}{Phase I sample size}
 
-\item{pY_X}{P(Y|X) for unvalidated rows at convergence for \code{theta}.}
+\item{pYgivX_unval}{P(Y|X) for unvalidated rows at convergence for \code{theta}.}
 
 \item{Y}{Column names with the validated outcome.}
 

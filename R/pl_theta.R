@@ -8,7 +8,7 @@
 #' @param h_N Size of the small perturbation in `theta[k]`, by default chosen to be `h_N =  N ^ ( - 1 / 2)`
 #' @param N Phase I sample size
 #' @param n Phase II sample size
-#' @param pY_X P(Y|X) for unvalidated rows at convergence for \code{theta}.
+#' @param pYgivX_unval P(Y|X) for unvalidated rows at convergence for \code{theta}.
 #' @param Y Column names with the validated outcome.
 #' @param X_val Column name(s) with the validated predictors. 
 #' @param C (Optional) Column name(s) with additional error-free covariates.
@@ -20,16 +20,16 @@
 #' @param MAX_ITER Maximum number of iterations allowed in the EM algorithm.
 #' @return Profile likelihood for `theta` after perturbing element `k` by `h_N`.
 
-pl_theta <- function(k, theta, h_N, n, N, pY_X, Y, X_val, C, Bspline, comp_dat_all, 
+pl_theta <- function(k, theta, h_N, n, N, pYgivX_unval, Y, X_val, C, Bspline, comp_dat_all, 
                      p0 = NULL, p_val_num = NULL, TOL, MAX_ITER) {
   pert <- theta
   pert[k] <- pert[k] + h_N
   pl_params <- profile_out(theta = pert,
                            n = n,
                            N = N,
-                           pY_X = pY_X,
+                           pYgivX_unval = pYgivX_unval,
                            Bspline = Bspline,
-                           comp_dat_all = comp_dat_all,
+                           comp_dat_unval = comp_dat_all[-c(1:n), ],
                            p0 = p0,
                            p_val_num = p_val_num,
                            TOL = TOL,
