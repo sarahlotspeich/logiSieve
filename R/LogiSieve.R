@@ -114,7 +114,8 @@ logiSieve = function(analysis_formula, error_formula, data, initial_lr_params = 
                      reorder = TRUE)
   prev_p = p0 =  t(t(p_val_num) / colSums(p_val_num))
   
-  theta_design_mat = cbind(int = 1, comp_dat_all[, c(X_val, C)])
+  theta_design_mat = cbind(int = 1, 
+                           comp_dat_all[, c(X_val, C)])
 
   # Initialize parameter values -------------------------------------
   if(!(initial_lr_params %in% c("Zero", "Complete-data"))) {
@@ -303,9 +304,9 @@ logiSieve = function(analysis_formula, error_formula, data, initial_lr_params = 
                                FUN = pl_theta,
                                theta = new_theta,
                                h_N = h_N,
-                               n = n,
                                N = N,
-                               pYgivX_unval = pY_X,
+                               n = n,
+                               theta_design_mat = theta_design_mat,
                                Y = Y,
                                X_val = X_val,
                                C = C,
@@ -323,7 +324,7 @@ logiSieve = function(analysis_formula, error_formula, data, initial_lr_params = 
       SE_CONVERGED = FALSE
     } else {
       spt_wide = matrix(data = rep(c(single_pert_theta), 
-                            times = ncol(I_theta)),
+                                   times = ncol(I_theta)),
                         ncol = ncol(I_theta),
                         byrow = FALSE)
       #for the each kth row of single_pert_theta add to the kth row / kth column of I_theta
@@ -338,9 +339,9 @@ logiSieve = function(analysis_formula, error_formula, data, initial_lr_params = 
                                  FUN = pl_theta,
                                  theta = pert_theta,
                                  h_N = h_N,
-                                 n = n,
                                  N = N,
-                                 pYgivX_unval = pY_X,
+                                 n = n,
+                                 theta_design_mat = theta_design_mat,
                                  Y = Y,
                                  X_val = X_val,
                                  C = C,

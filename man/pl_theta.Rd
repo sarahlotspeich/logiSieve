@@ -8,9 +8,9 @@ pl_theta(
   k,
   theta,
   h_N,
-  n,
   N,
-  pYgivX_unval,
+  n,
+  theta_design_mat,
   Y,
   X_val,
   C,
@@ -29,11 +29,11 @@ pl_theta(
 
 \item{h_N}{Size of the small perturbation in \code{theta[k]}, by default chosen to be \code{h_N =  N ^ ( - 1 / 2)}}
 
-\item{n}{Phase II sample size}
-
 \item{N}{Phase I sample size}
 
-\item{pYgivX_unval}{P(Y|X) for unvalidated rows at convergence for \code{theta}.}
+\item{n}{Phase II sample size}
+
+\item{theta_design_mat}{Design matrix for model P(Y|X) for validated and unvalidated rows.}
 
 \item{Y}{Column names with the validated outcome.}
 
@@ -43,7 +43,7 @@ pl_theta(
 
 \item{Bspline}{Vector of column names containing the B-spline basis functions.}
 
-\item{comp_dat_all}{Augmented dataset containing rows for each combination of unvalidated subjects' data with values from Phase II (a matrix)}
+\item{comp_dat_all}{Augmented dataset containing rows for validated subjects and each combination of unvalidated subjects' data with values from Phase II}
 
 \item{p0}{Starting values for \code{p}, the B-spline coefficients for the approximated covariate error model (a matrix)}
 

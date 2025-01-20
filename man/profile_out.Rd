@@ -6,11 +6,12 @@
 \usage{
 profile_out(
   theta,
-  n,
   N,
-  pYgivX_unval,
-  Bspline = NULL,
-  comp_dat_unval,
+  n,
+  theta_design_mat,
+  Y,
+  Bspline,
+  comp_dat_all,
   p0,
   p_val_num,
   tol,
@@ -20,15 +21,17 @@ profile_out(
 \arguments{
 \item{theta}{Parameters for the analysis model (a column vector)}
 
-\item{n}{Phase II sample size}
-
 \item{N}{Phase I sample size}
 
-\item{pYgivX_unval}{P(Y|X) for unvalidated rows at convergence for \code{theta}.}
+\item{n}{Phase II sample size}
+
+\item{theta_design_mat}{Design matrix for model P(Y|X) for validated and unvalidated rows.}
+
+\item{Y}{Column names with the validated outcome.}
 
 \item{Bspline}{Vector of column names containing the B-spline basis functions.}
 
-\item{comp_dat_unval}{Augmented dataset containing rows for each combination of unvalidated subjects' data with values from Phase II (a matrix)}
+\item{comp_dat_all}{Augmented dataset containing rows for validated subjects and each combination of unvalidated subjects' data with values from Phase II}
 
 \item{p0}{Starting values for \code{p}, the B-spline coefficients for the approximated covariate error model (a matrix)}
 
