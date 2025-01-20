@@ -7,49 +7,46 @@
 logiSieve(
   analysis_formula,
   error_formula,
-  data = NULL,
-  hn_scale = 1,
-  noSE = FALSE,
-  TOL = 1e-04,
-  MAX_ITER = 1000,
-  verbose = FALSE
+  data,
+  initial_lr_params = "Zero",
+  pert_scale = 1,
+  no_se = FALSE,
+  tol = 1e-04,
+  max_iter = 1000,
+  output = "logORs"
 )
 }
 \arguments{
-\item{analysis_formula}{analysis model formula (or coercible to formula), a formula expression as for other regression models. The response should be the logistic regression model outcome.}
+\item{analysis_formula}{formula, analysis model formula (or coercible to formula), a formula expression as for other regression models. The response should be the logistic regression model outcome.}
 
-\item{error_formula}{covariate error model formula (or coercible to formula), a formula expression as for other regression models. The response should be the error-free version of the error-prone of the covariate, and the covariate should be the names of the B-spline columns.}
+\item{error_formula}{formula, covariate error model formula (or coercible to formula), a formula expression as for other regression models. The response should be the error-free version of the error-prone of the covariate, and the covariate should be the names of the B-spline columns.}
 
-\item{data}{Specifies the name of the dataset. This argument is required.}
+\item{data}{dataframe, a dataframe with one row per subject containing all variables from \code{analysis_formula} and \code{error_formula}.}
 
-\item{hn_scale}{Specifies the scale of the perturbation constant in the variance estimation. For example, if \code{hn_scale = 0.5}, then the perturbation constant is \eqn{0.5n^{-1/2}}, where \eqn{n} is the first-phase sample size. The default value is \code{1}. This argument is optional.}
+\item{initial_lr_params}{character, initial values for parametric model parameters. Choices include (1) \code{"Zero"} (non-informative starting values) or (2) \code{"Complete-data"} (estimated based on validated subjects only)}
 
-\item{noSE}{If \code{TRUE}, then the variances of the parameter estimators will not be estimated. The default value is \code{FALSE}. This argument is optional.}
+\item{pert_scale}{scalar, size of the perturbation used in estimating the standard errors via profile likelihood. If none is supplied, default is \code{pert_scale = 1}.}
 
-\item{TOL}{Specifies the convergence criterion in the EM algorithm. The default value is \code{1E-4}. This argument is optional.}
+\item{no_se}{logical, indicator for whether standard errors are desired. Defaults to \code{no_se = FALSE}.}
 
-\item{MAX_ITER}{Maximum number of iterations in the EM algorithm. The default number is \code{1000}. This argument is optional.}
+\item{tol}{scalar, tolerance between iterations in the EM algorithm used to define convergence.}
 
-\item{verbose}{If \code{TRUE}, then show details of the analysis. The default value is \code{FALSE}.}
+\item{max_iter}{scalar, maximum number of iterations allowed in the EM algorithm.}
 
-\item{X_unval}{Specifies the columns of the error-prone covariates. This argument is required.}
-
-\item{X}{Specifies the columns that store the validated values of \code{X_unval} in the second phase. Subjects with missing values of \code{X} are considered as those not selected in the second phase. This argument is required.}
-
-\item{Bspline}{Specifies the columns of the B-spline basis. This argument is required.}
-
-\item{Z}{Specifies the columns of the accurately measured covariates. This argument is optional.}
+\item{output}{character, level of fitted model output to be returned. Defaults to \code{output = "logORs"}, but \code{output = "all"} is also possible.}
 }
 \value{
-\item{coefficients}{Stores the analysis results.}
-\item{covariance}{Stores the covariance matrix of the regression coefficient estimates.}
-\item{converge}{In parameter estimation, if the EM algorithm converges, then \code{converge = TRUE}. Otherwise, \code{converge = FALSE}.}
-\item{converge_cov}{In variance estimation, if the EM algorithm converges, then \code{converge_cov = TRUE}. Otherwise, \code{converge_cov = FALSE}.}
-\item{converge_msg}{In parameter estimation, if the EM algorithm does not converge, then \code{converged_msg} is a string description.}
+A list with the following named slots:
+\item{model_coeff}{dataframe with final model coefficients and standard error estimates (where applicable) for the analysis model.}
+\item{outcome_error_coeff}{dataframe with final model coefficients for the outcome error model. (Only returned if \code{output = "all"}.)}
+\item{bspline_coeff}{dataframe with B-spline coefficients for the covariate error model. (Only returned if \code{output = "all"}.)}
+\item{vcov}{covariance matrix of \code{model_coeff} for the analysis model.}
+\item{converged}{indicator of EM algorithm convergence for parameter estimates.}
+\item{se_converged}{indicator of standard error estimate convergence.}
+\item{converged_msg}{(where applicable) description of non-convergence.}
+\item{iterations}{number of iterations completed by EM algorithm to find parameter estimates. (Only returned if \code{output = "all"}.)}
+\item{od_loglik_at_conv}{value of the observed-data log-likelihood at convergence. (Only returned if \code{output = "all"}.)}
 }
 \description{
-This function returns the sieve maximum likelihood estimators (SMLE) for the logistic regression model from Lotspeich et al. (2021).
-}
-\references{
-Lotspeich, S. C., Shepherd, B. E., Amorim, G. G. C., Shaw, P. A., & Tao, R. (2021). Efficient odds ratio estimation under two-phase sampling using error-prone data from a multi-national HIV research cohort. \emph{Biometrics, biom.13512.} https://doi.org/10.1111/biom.13512
+This function returns the sieve maximum likelihood estimators (SMLE) for the logistic regression model from Lotspeich et al. (2025+).
 }
