@@ -255,7 +255,6 @@ logiSieve = function(analysis_formula, error_formula, data, initial_lr_params = 
                                            C = C,
                                            Bspline = Bspline,
                                            comp_dat_all = comp_dat_all,
-                                           theta_pred = c(X_val, C),
                                            theta = new_theta,
                                            p = new_p)
     
@@ -293,7 +292,6 @@ logiSieve = function(analysis_formula, error_formula, data, initial_lr_params = 
                                            C = C,
                                            Bspline = Bspline,
                                            comp_dat_all = comp_dat_all,
-                                           theta_pred = c(X_val, C),
                                            theta = new_theta,
                                            p = new_p)
 
@@ -307,12 +305,9 @@ logiSieve = function(analysis_formula, error_formula, data, initial_lr_params = 
                                h_N = h_N,
                                n = n,
                                N = N,
-                               Y = Y,
-                               X_val = X_val,
-                               C = C,
+                               pY_X = pY_X,
                                Bspline = Bspline,
                                comp_dat_all = comp_dat_all,
-                               theta_pred = c(X_val, C),
                                p0 = new_p,
                                p_val_num = p_val_num,
                                TOL = tol,
@@ -337,21 +332,18 @@ logiSieve = function(analysis_formula, error_formula, data, initial_lr_params = 
       pert_theta = new_theta
       pert_theta[c] = pert_theta[c] + h_N
       double_pert_theta = sapply(X = seq(c, ncol(I_theta)),
-                                  FUN = pl_theta,
-                                  theta = pert_theta,
-                                  h_N = h_N,
-                                  n = n,
-                                  N = N,
-                                  Y = Y,
-                                  X_val = X_val,
-                                  C = C,
-                                  Bspline = Bspline,
-                                  comp_dat_all = comp_dat_all,
-                                  theta_pred = c(X_val, C),
-                                  p0 = new_p,
-                                  p_val_num = p_val_num,
-                                  MAX_ITER = max_iter,
-                                  TOL = tol)
+                                 FUN = pl_theta,
+                                 theta = pert_theta,
+                                 h_N = h_N,
+                                 n = n,
+                                 N = N,
+                                 pY_X = pY_X,
+                                 Bspline = Bspline,
+                                 comp_dat_all = comp_dat_all,
+                                 p0 = new_p,
+                                 p_val_num = p_val_num,
+                                 MAX_ITER = max_iter,
+                                 TOL = tol)
       dpt = matrix(data = 0, 
                    nrow = nrow(I_theta), 
                    ncol = ncol(I_theta))

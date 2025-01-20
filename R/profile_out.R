@@ -8,34 +8,21 @@
 #' @param theta Parameters for the analysis model (a column vector)
 #' @param N Phase I sample size
 #' @param n Phase II sample size
-#' @param Y Column names with the validated outcome.
-#' @param X_val Column name(s) with the validated predictors. 
-#' @param C (Optional) Column name(s) with additional error-free covariates.
+#' @param pY_X P(Y|X) for unvalidated rows at convergence for \code{theta}.
 #' @param Bspline Vector of column names containing the B-spline basis functions.
 #' @param comp_dat_all Augmented dataset containing rows for each combination of unvalidated subjects' data with values from Phase II (a matrix)
-#' @param theta_pred Vector of columns in \code{comp_dat_all} that pertain to the predictors in the analysis model.
 #' @param p0 Starting values for `p`, the B-spline coefficients for the approximated covariate error model (a matrix)
 #' @param p_val_num Contributions of validated subjects to the numerator for `p`, which are fixed (a matrix)
 #' @param TOL Tolerance between iterations in the EM algorithm used to define convergence.
 #' @param MAX_ITER Maximum number of iterations allowed in the EM algorithm.
 #' @return Profile likelihood for `theta`: the value of the observed-data log-likelihood after profiling out other parameters.
 
-profile_out <- function(theta, n, N, Y = NULL, X_val = NULL, C = NULL, Bspline = NULL,
-                        comp_dat_all, theta_pred, p0, p_val_num, TOL, MAX_ITER) {
+profile_out <- function(theta, n, N, pY_X, Bspline = NULL, comp_dat_all, 
+                        p0, p_val_num, TOL, MAX_ITER) {
   # Save useful constants
   sn <- ncol(p0)
   m <- nrow(p0)
   prev_p <- p0
-
-  theta_design_mat <- cbind(int = 1, 
-                            comp_dat_all[-c(1:n), theta_pred])
-
-  # For the E-step, save static P(Y|X) for unvalidated --------------
-  mu_theta <- as.numeric(theta_design_mat %*% theta)
-  pY_X <- 1 / (1 + exp(- mu_theta))
-  I_y0 <-  comp_dat_all[-c(1:n), Y] == 0
-  pY_X[I_y0] <- 1 - pY_X[I_y0]
-  # -------------- For the E-step, save static P(Y|X) for unvalidated
 
   CONVERGED <- FALSE
   CONVERGED_MSG <- "Unknown"
@@ -48,7 +35,8 @@ profile_out <- function(theta, n, N, Y = NULL, X_val = NULL, C = NULL, Bspline =
     ### p_kj ----------------------------------------------------------
     ### need to reorder pX so that it's x1, ..., x1, ...., xm, ..., xm-
     ### multiply by the B-spline terms
-    pX <- prev_p[rep(seq(1, m), each = (N - n)), ] * comp_dat_all[-c(1:n), Bspline]
+    pX <- prev_p[rep(seq(1, m), each = (N - n)), ] * 
+      comp_dat_all[-c(1:n), Bspline]
     ### ---------------------------------------------------------- p_kj
     ### ------------------------------------------------------- P(X|X*)
     ###################################################################
@@ -57,7 +45,9 @@ profile_out <- function(theta, n, N, Y = NULL, X_val = NULL, C = NULL, Bspline =
     psi_num <- c(pY_X) * pX
     ### Update denominator ------------------------------------------
     #### Sum up all rows per id (e.g. sum over xk) ------------------
-    psi_denom <- rowsum(psi_num, group = rep(seq(1, (N - n)), times = m))
+    psi_denom <- rowsum(x = psi_num, 
+                        group = rep(seq(1, (N - n)), 
+                                    times = m))
     #### Then sum over the sn splines -------------------------------
     psi_denom <- rowSums(psi_denom)
     #### Avoid NaN resulting from dividing by 0 ---------------------
@@ -77,7 +67,9 @@ profile_out <- function(theta, n, N, Y = NULL, X_val = NULL, C = NULL, Bspline =
     ## Update {p_kj} --------------------------------------------------
     ### Update numerators by summing u_t over i = 1, ..., N ---------
     new_p_num <- p_val_num +
-      rowsum(psi_t, group = rep(seq(1, m), each = (N - n)), reorder = TRUE)
+      rowsum(x = psi_t, 
+             group = rep(seq(1, m), each = (N - n)), 
+             reorder = TRUE)
     new_p <- t(t(new_p_num) / colSums(new_p_num))
     ### Check for convergence ---------------------------------------
     p_conv <- abs(new_p - prev_p) < TOL
@@ -94,7 +86,7 @@ profile_out <- function(theta, n, N, Y = NULL, X_val = NULL, C = NULL, Bspline =
     #  ------------------------------- Update values for next iteration
   }
 
-  if(it == MAX_ITER & !CONVERGED) {
+  if(it > MAX_ITER & !CONVERGED) {
     CONVERGED_MSG <- "MAX_ITER reached"
     new_p <- matrix(data = NA, 
                     nrow = nrow(p0), 

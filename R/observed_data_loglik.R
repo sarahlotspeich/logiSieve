@@ -11,14 +11,13 @@
 #' @param C (Optional) Column name(s) with additional error-free covariates.
 #' @param Bspline Vector of column names containing the B-spline basis functions.
 #' @param comp_dat_all Augmented dataset containing rows for each combination of unvalidated subjects' data with values from Phase II (a matrix)
-#' @param theta_pred Vector of columns in \code{comp_dat_all} that pertain to the predictors in the analysis model.
 #' @param theta Parameters for the analysis model (a column vector)
 #' @param p B-spline coefficients for the approximated covariate error model (a matrix)
 #' @return Scalar value of the function
 #' @export
 
 observed_data_loglik <- function(N, n, Y = NULL, X_val = NULL, C = NULL, Bspline = NULL, 
-                                 comp_dat_all, theta_pred, theta, p) {
+                                 comp_dat_all, theta, p) {
   #sn <- ncol(p)
   m <- nrow(p)
   

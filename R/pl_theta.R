@@ -8,12 +8,9 @@
 #' @param h_N Size of the small perturbation in `theta[k]`, by default chosen to be `h_N =  N ^ ( - 1 / 2)`
 #' @param N Phase I sample size
 #' @param n Phase II sample size
-#' @param Y Column name with the outcome.
-#' @param X_val Column name(s) with the validated predictors. 
-#' @param C (Optional) Column name(s) with additional error-free covariates.
+#' @param pY_X P(Y|X) for unvalidated rows at convergence for \code{theta}.
 #' @param Bspline Vector of column names containing the B-spline basis functions.
 #' @param comp_dat_all Augmented dataset containing rows for each combination of unvalidated subjects' data with values from Phase II (a matrix)
-#' @param theta_pred Vector of columns in \code{comp_dat_all} that pertain to the predictors in the analysis model.
 #' @param p0 Starting values for `p`, the B-spline coefficients for the approximated covariate error model (a matrix)
 #' @param p_val_num Contributions of validated subjects to the numerator for `p`, which are fixed (a matrix)
 #' @param TOL Tolerance between iterations in the EM algorithm used to define convergence.
@@ -28,12 +25,9 @@ pl_theta <- function(k, theta, h_N, n, N, Y, X_val, C, Bspline,
   pl_params <- profile_out(theta = pert,
                            n = n,
                            N = N,
-                           Y = Y,
-                           X_val = X_val,
-                           C = C,
+                           pY_X = pY_X,
                            Bspline = Bspline,
                            comp_dat_all = comp_dat_all,
-                           theta_pred = theta_pred,
                            p0 = p0,
                            p_val_num = p_val_num,
                            TOL = TOL,
@@ -46,7 +40,6 @@ pl_theta <- function(k, theta, h_N, n, N, Y, X_val, C, Bspline,
                                            C = C,
                                            Bspline = Bspline,
                                            comp_dat_all = comp_dat_all,
-                                           theta_pred = theta_pred,
                                            theta = pert,
                                            p = pl_params$p_at_conv)
 

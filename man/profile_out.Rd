@@ -8,12 +8,9 @@ profile_out(
   theta,
   n,
   N,
-  Y = NULL,
-  X_val = NULL,
-  C = NULL,
+  pY_X,
   Bspline = NULL,
   comp_dat_all,
-  theta_pred,
   p0,
   p_val_num,
   TOL,
@@ -27,17 +24,11 @@ profile_out(
 
 \item{N}{Phase I sample size}
 
-\item{Y}{Column names with the validated outcome.}
-
-\item{X_val}{Column name(s) with the validated predictors.}
-
-\item{C}{(Optional) Column name(s) with additional error-free covariates.}
+\item{pY_X}{P(Y|X) for unvalidated rows at convergence for \code{theta}.}
 
 \item{Bspline}{Vector of column names containing the B-spline basis functions.}
 
 \item{comp_dat_all}{Augmented dataset containing rows for each combination of unvalidated subjects' data with values from Phase II (a matrix)}
-
-\item{theta_pred}{Vector of columns in \code{comp_dat_all} that pertain to the predictors in the analysis model.}
 
 \item{p0}{Starting values for \code{p}, the B-spline coefficients for the approximated covariate error model (a matrix)}
 

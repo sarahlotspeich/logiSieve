@@ -33,17 +33,9 @@ pl_theta(
 
 \item{N}{Phase I sample size}
 
-\item{Y}{Column name with the outcome.}
-
-\item{X_val}{Column name(s) with the validated predictors.}
-
-\item{C}{(Optional) Column name(s) with additional error-free covariates.}
-
 \item{Bspline}{Vector of column names containing the B-spline basis functions.}
 
 \item{comp_dat_all}{Augmented dataset containing rows for each combination of unvalidated subjects' data with values from Phase II (a matrix)}
-
-\item{theta_pred}{Vector of columns in \code{comp_dat_all} that pertain to the predictors in the analysis model.}
 
 \item{p0}{Starting values for \code{p}, the B-spline coefficients for the approximated covariate error model (a matrix)}
 
@@ -52,6 +44,8 @@ pl_theta(
 \item{TOL}{Tolerance between iterations in the EM algorithm used to define convergence.}
 
 \item{MAX_ITER}{Maximum number of iterations allowed in the EM algorithm.}
+
+\item{pY_X}{P(Y|X) for unvalidated rows at convergence for \code{theta}.}
 }
 \value{
 Profile likelihood for \code{theta} after perturbing element \code{k} by \code{h_N}.
