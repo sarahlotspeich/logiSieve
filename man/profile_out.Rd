@@ -8,16 +8,12 @@ profile_out(
   theta,
   n,
   N,
-  Y_unval = NULL,
-  Y_val = NULL,
-  X_unval = NULL,
+  Y = NULL,
   X_val = NULL,
   C = NULL,
   Bspline = NULL,
   comp_dat_all,
   theta_pred,
-  gamma_pred,
-  gamma0,
   p0,
   p_val_num,
   TOL,
@@ -31,13 +27,9 @@ profile_out(
 
 \item{N}{Phase I sample size}
 
-\item{Y_unval}{Column names with the unvalidated outcome. If \code{Y_unval} is null, the outcome is assumed to be error-free.}
+\item{Y}{Column names with the validated outcome.}
 
-\item{Y_val}{Column names with the validated outcome.}
-
-\item{X_unval}{Column name(s) with the unvalidated predictors.  If \code{X_unval} and \code{X_val} are \code{null}, all precictors are assumed to be error-free.}
-
-\item{X_val}{Column name(s) with the validated predictors. If \code{X_unval} and \code{X_val} are \code{null}, all precictors are assumed to be error-free.}
+\item{X_val}{Column name(s) with the validated predictors.}
 
 \item{C}{(Optional) Column name(s) with additional error-free covariates.}
 
@@ -47,10 +39,6 @@ profile_out(
 
 \item{theta_pred}{Vector of columns in \code{comp_dat_all} that pertain to the predictors in the analysis model.}
 
-\item{gamma_pred}{Vector of columns in \code{comp_dat_all} that pertain to the predictors in the outcome error model.}
-
-\item{gamma0}{Starting values for \code{gamma}, the parameters for the outcome error model (a column vector)}
-
 \item{p0}{Starting values for \code{p}, the B-spline coefficients for the approximated covariate error model (a matrix)}
 
 \item{p_val_num}{Contributions of validated subjects to the numerator for \code{p}, which are fixed (a matrix)}
@@ -58,15 +46,13 @@ profile_out(
 \item{TOL}{Tolerance between iterations in the EM algorithm used to define convergence.}
 
 \item{MAX_ITER}{Maximum number of iterations allowed in the EM algorithm.}
-
-\item{Validated}{Column name with the validation indicator. The validation indicator can be defined as \code{Validated = 1} or \code{TRUE} if the subject was validated and \code{Validated = 0} or \code{FALSE} otherwise.}
 }
 \value{
 Profile likelihood for \code{theta}: the value of the observed-data log-likelihood after profiling out other parameters.
 }
 \description{
 For a given vector \code{theta} to parameterize P(Y|X,C), this function repeats the EM algorithm to find
-the values of \code{gamma} and \code{p} at convergence. The resulting parameters are used to find the profile
+the values of \code{p} at convergence. The resulting parameters are used to find the profile
 log-likelihood for \code{theta} by plugging them into the observed-data log-likelihood.
 This function is used by \code{pl_theta()}.
 }

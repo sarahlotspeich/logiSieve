@@ -13,7 +13,6 @@
 #' @param output character, level of fitted model output to be returned. Defaults to \code{output = "logORs"}, but \code{output = "all"} is also possible.
 #' @return A list with the following named slots:
 #' \item{model_coeff}{dataframe with final model coefficients and standard error estimates (where applicable) for the analysis model.}
-#' \item{outcome_error_coeff}{dataframe with final model coefficients for the outcome error model. (Only returned if \code{output = "all"}.)}
 #' \item{bspline_coeff}{dataframe with B-spline coefficients for the covariate error model. (Only returned if \code{output = "all"}.)}
 #' \item{vcov}{covariance matrix of \code{model_coeff} for the analysis model.}
 #' \item{converged}{indicator of EM algorithm convergence for parameter estimates.}
@@ -29,9 +28,7 @@ logiSieve = function(analysis_formula, error_formula, data, initial_lr_params = 
                      pert_scale = 1, no_se = FALSE, tol = 1E-4, max_iter = 1000, output = "logORs")
 {
   # Extract variable names from user-specified formulas
-  Y_unval = NULL ## no errors in outcome
-  X_unval = NULL ## placeholder (don't need it)
-  Y_val = as.character(as.formula(analysis_formula))[2] ## outcome
+  Y = as.character(as.formula(analysis_formula))[2] ## outcome
   X_val = as.character(as.formula(error_formula))[2] ## error-free covariate
   C = setdiff(x = unlist(strsplit(x = gsub(pattern = " ",
                                            replacement = "",
@@ -55,264 +52,125 @@ logiSieve = function(analysis_formula, error_formula, data, initial_lr_params = 
   # Reorder so that the n validated subjects are first ------------
   data = data[order(as.numeric(data[, "V"]), decreasing = TRUE), ]
 
-  # Determine error setting -----------------------------------------
-  ## If unvalidated variable was left blank, assume error-free ------
-  errorsY = errorsX = TRUE
-  if (is.null(Y_unval)) {errorsY = FALSE}
-  if (is.null(X_unval) & is.null(X_val)) {errorsX = FALSE}
-  ## ------ If unvalidated variable was left blank, assume error-free
-  # ----------------------------------------- Determine error setting
-
-  # Add the B spline basis ------------------------------------------
-  if (errorsX) {
-    sn = ncol(data[, Bspline])
-    if(0 %in% colSums(data[c(1:n), Bspline])) {
-      warning("Empty sieve in validated data. Reconstruct B-spline basis and try again.", call. = FALSE)
-      
-      if(output == "logORs") {
-        return(list(model_coeff = data.frame(coeff = NA, se = NA),
-                    vcov = NA,
-                    converged = NA,
-                    se_converged = NA,
-                    converged_msg = "B-spline error"))
-      } else {
-        return(list(model_coeff = data.frame(coeff = NA, se = NA),
-                    outcome_error_coeff = data.frame(coeff = NA),
-                    bspline_coeff = NA,
-                    vcov = NA,
-                    converged = NA,
-                    se_converged = NA,
-                    converged_msg = "B-spline error",
-                    iterations = 0,
-                    od_loglik_at_conv = NA))
-      }
+  # Add the B spline basis -------------------------------------------
+  sn = ncol(data[, Bspline])
+  if(0 %in% colSums(data[c(1:n), Bspline])) {
+    warning("Empty sieve in validated data. Reconstruct B-spline basis and try again.", call. = FALSE)
+    
+    if(output == "logORs") {
+      return(list(model_coeff = data.frame(coeff = NA, se = NA),
+                  vcov = NA,
+                  converged = NA,
+                  se_converged = NA,
+                  converged_msg = "B-spline error"))
+    } else {
+      return(list(model_coeff = data.frame(coeff = NA, se = NA),
+                  bspline_coeff = NA,
+                  vcov = NA,
+                  converged = NA,
+                  se_converged = NA,
+                  converged_msg = "B-spline error",
+                  iterations = 0,
+                  od_loglik_at_conv = NA))
     }
   }
-  # ------------------------------------------ Add the B spline basis
+  # ------------------------------------------- Add the B spline basis
 
-  if (is.null(theta_pred)) {
-    theta_pred = c(X_val, C)
-    message("Analysis model assumed main effects only.")
-  }
+  # Save distinct X -------------------------------------------------
+  x_obs = data.frame(unique(data[1:n, c(X_val)]))
+  x_obs = data.frame(x_obs[order(x_obs[, 1]), ])
+  m = nrow(x_obs)
+  x_obs_stacked = do.call(what = rbind, 
+                          args = replicate(n = (N - n), 
+                                           expr = x_obs, 
+                                           simplify = FALSE))
+  x_obs_stacked = data.frame(x_obs_stacked[order(x_obs_stacked[, 1]), ])
+  colnames(x_obs) = colnames(x_obs_stacked) = c(X_val)
 
-  if (is.null(gamma_pred) & errorsY) {
-    gamma_pred = c(X_unval, Y_val, X_val, C)
-    message("Outcome error model assumed main effects only.")
-  }
+  # Save static (X*,X,Y,C) since they don't change ---------------
+  comp_dat_val = data[c(1:n), c(Y, X_val, C, Bspline)]
+  comp_dat_val = merge(x = comp_dat_val, 
+                       y = data.frame(x_obs, k = 1:m), 
+                       all.x = TRUE)
+  comp_dat_val = comp_dat_val[, c(Y, X_val, C, Bspline, "k")]
+  comp_dat_val = data.matrix(comp_dat_val)
 
-  pred = unique(c(theta_pred, gamma_pred))
-
-  if (errorsX & errorsY) {
-    # Save distinct X -------------------------------------------------
-    x_obs = data.frame(unique(data[1:n, c(X_val)]))
-    x_obs = data.frame(x_obs[order(x_obs[, 1]), ])
-    m = nrow(x_obs)
-    x_obs_stacked = do.call(rbind, replicate(n = (N - n), expr = x_obs, simplify = FALSE))
-    x_obs_stacked = data.frame(x_obs_stacked[order(x_obs_stacked[, 1]), ])
-    colnames(x_obs) = colnames(x_obs_stacked) = c(X_val)
-
-    # Save static (X*,Y*,X,Y,C) since they don't change ---------------
-    comp_dat_val = data[c(1:n), c(Y_unval, X_unval, C, Bspline, X_val, Y_val)]
-    comp_dat_val = merge(x = comp_dat_val, y = data.frame(x_obs, k = 1:m), all.x = TRUE)
-    comp_dat_val = comp_dat_val[, c(Y_unval, pred, Bspline, "k")]
-    comp_dat_val = data.matrix(comp_dat_val)
-
-    # 2 (m x n)xd matrices (y=0/y=1) of each (one column per person, --
-    # one row per x) --------------------------------------------------
-    comp_dat_unval = suppressWarnings(cbind(data[-c(1:n), c(Y_unval, setdiff(x = pred, y = c(Y_val, X_val)), Bspline)],
-                                            x_obs_stacked))
-    comp_dat_y0 = data.frame(comp_dat_unval, Y = 0)
-    comp_dat_y1 = data.frame(comp_dat_unval, Y = 1)
-    colnames(comp_dat_y0)[length(colnames(comp_dat_y0))] = colnames(comp_dat_y1)[length(colnames(comp_dat_y1))] = Y_val
-    comp_dat_unval = data.matrix(cbind(rbind(comp_dat_y0, comp_dat_y1),
-                                        k = rep(rep(seq(1, m), each = (N - n)), times = 2)))
-    comp_dat_unval = comp_dat_unval[, c(Y_unval, pred, Bspline, "k")]
-
-    comp_dat_all = rbind(comp_dat_val, comp_dat_unval)
-
-    # Initialize B-spline coefficients {p_kj}  ------------
-    ## Numerators sum B(Xi*) over k = 1,...,m -------------
-    ## Save as p_val_num for updates ----------------------
-    ## (contributions don't change) -----------------------
-    p_val_num = rowsum(x = comp_dat_val[, Bspline], group = comp_dat_val[, "k"], reorder = TRUE)
-    prev_p = p0 =  t(t(p_val_num) / colSums(p_val_num))
-  } else if (errorsX) {
-    # Save distinct X -------------------------------------------------
-    x_obs = data.frame(unique(data[1:n, c(X_val)]))
-    x_obs = data.frame(x_obs[order(x_obs[, 1]), ])
-    m = nrow(x_obs)
-    x_obs_stacked = do.call(rbind, replicate(n = (N - n), expr = x_obs, simplify = FALSE))
-    x_obs_stacked = data.frame(x_obs_stacked[order(x_obs_stacked[, 1]), ])
-    colnames(x_obs) = colnames(x_obs_stacked) = c(X_val)
-
-    # Save static (X*,X,Y,C) since they don't change ---------------
-    comp_dat_val = data[c(1:n), c(Y_val, pred, Bspline)]
-    comp_dat_val = merge(x = comp_dat_val, y = data.frame(x_obs, k = 1:m), all.x = TRUE)
-    comp_dat_val = comp_dat_val[, c(Y_val, pred, Bspline, "k")]
-    comp_dat_val = data.matrix(comp_dat_val)
-
-    # (m x n)xd vectors of each (one column per person, one row per x) --
-    comp_dat_unval = suppressWarnings(
-      data.matrix(
-        cbind(data[-c(1:n), c(Y_val, setdiff(x = pred, y = c(X_val)), Bspline)],
-              x_obs_stacked,
-              k = rep(seq(1, m), each = (N - n)))
-      )
+  # (m x n)xd vectors of each (one column per person, one row per x) --
+  comp_dat_unval = suppressWarnings(
+    data.matrix(
+      cbind(data[-c(1:n), c(Y, C, Bspline)],
+            x_obs_stacked,
+            k = rep(seq(1, m), each = (N - n)))
     )
-    comp_dat_unval = comp_dat_unval[, c(Y_val, pred, Bspline, "k")]
+  )
+  comp_dat_unval = comp_dat_unval[, c(Y, X_val, C, Bspline, "k")]
+  comp_dat_all = rbind(comp_dat_val, comp_dat_unval)
 
-    comp_dat_all = rbind(comp_dat_val, comp_dat_unval)
-
-    # Initialize B-spline coefficients {p_kj}  ------------
-    ## Numerators sum B(Xi*) over k = 1,...,m -------------
-    ## Save as p_val_num for updates ----------------------
-    ## (contributions don't change) -----------------------
-    p_val_num = rowsum(x = comp_dat_val[, Bspline], group = comp_dat_val[, "k"], reorder = TRUE)
-    prev_p = p0 =  t(t(p_val_num) / colSums(p_val_num))
-  } else if (errorsY) {
-    # Save static (Y*,X,Y,C) since they don't change ------------------
-    comp_dat_val = data.matrix(data[c(1:n), c(Y_unval, pred)])
-
-    # Create duplicate rows of each person (one each for y = 0/1) -----
-    comp_dat_unval = data[-c(1:n), c(Y_unval, setdiff(x = pred, y = c(Y_val)))]
-    comp_dat_y0 = data.frame(comp_dat_unval, Y = 0)
-    comp_dat_y1 = data.frame(comp_dat_unval, Y = 1)
-    colnames(comp_dat_y0)[length(colnames(comp_dat_y0))] =
-      colnames(comp_dat_y1)[length(colnames(comp_dat_y1))] = Y_val
-    comp_dat_unval = data.matrix(rbind(comp_dat_y0, comp_dat_y1))
-
-    # Stack complete data: --------------------------------------------
-    ## n rows for the n subjects in Phase II (1 each) -----------------
-    ## 2 * (N - n) for the (N - n) subjects from Phase I (2 each) -----
-    comp_dat_all = rbind(comp_dat_val, comp_dat_unval)
-  }
-
-  theta_design_mat = cbind(int = 1, comp_dat_all[, theta_pred])
-
-  if (errorsY) {
-    gamma_design_mat = cbind(int = 1, comp_dat_all[, gamma_pred])
-  }
+  # Initialize B-spline coefficients {p_kj}  ------------
+  ## Numerators sum B(Xi*) over k = 1,...,m -------------
+  ## Save as p_val_num for updates ----------------------
+  ## (contributions don't change) -----------------------
+  p_val_num = rowsum(x = comp_dat_val[, Bspline], 
+                     group = comp_dat_val[, "k"], 
+                     reorder = TRUE)
+  prev_p = p0 =  t(t(p_val_num) / colSums(p_val_num))
+  
+  theta_design_mat = cbind(int = 1, comp_dat_all[, c(X_val, C)])
 
   # Initialize parameter values -------------------------------------
-  ## theta, gamma ---------------------------------------------------
   if(!(initial_lr_params %in% c("Zero", "Complete-data"))) {
     message("Invalid starting values provided. Non-informative zeros assumed.")
     initial_lr_params = "Zero"
   }
-
   if(initial_lr_params == "Zero") {
     prev_theta = theta0 = matrix(data = 0, 
                                  nrow = ncol(theta_design_mat), 
                                  ncol = 1)
-    if (errorsY) {
-      prev_gamma = gamma0 = matrix(data = 0, 
-                                   nrow = ncol(gamma_design_mat), 
-                                   ncol = 1)
-    }
   } else if(initial_lr_params == "Complete-data") {
     prev_theta = theta0 = matrix(glm(formula = analysis_formula, 
                                      family = "binomial", 
                                      data = data.frame(data[c(1:n), ]))$coefficients, 
                                  ncol = 1)
-    if (errorsY) {
-      prev_gamma = gamma0 = matrix(glm(formula = error_formula, 
-                                       family = "binomial", 
-                                       data = data.frame(data[c(1:n), ]))$coefficient, 
-                                   ncol = 1)
-    }
   }
 
+  # Estimate theta using EM -------------------------------------------
   CONVERGED = FALSE
   CONVERGED_MSG = "Unknown"
   it = 1
-
-  # Estimate theta using EM -------------------------------------------
   while(it <= max_iter & !CONVERGED) {
     # E Step ----------------------------------------------------------
     ## Update the psi_kyji for unvalidated subjects -------------------
     ### P(Y|X) --------------------------------------------------------
     mu_theta = as.numeric(theta_design_mat[-c(1:n), ] %*% prev_theta)
     pY_X = 1 / (1 + exp(- mu_theta))
-    I_y0 = comp_dat_unval[, Y_val] == 0
+    I_y0 = comp_dat_unval[, Y] == 0
     pY_X[I_y0] = 1 - pY_X[I_y0]
     ### -------------------------------------------------------- P(Y|X)
     ###################################################################
-    ### P(Y*|X*,Y,X) --------------------------------------------------
-    if (errorsY) {
-      pYstar = 1 / (1 + exp(- as.numeric(gamma_design_mat[-c(1:n), ] %*% prev_gamma)))
-      I_ystar0 = comp_dat_unval[, Y_unval] == 0
-      pYstar[I_ystar0] = 1 - pYstar[I_ystar0]
-
-    } #else {
-      #pYstar = matrix(1, nrow = nrow(comp_dat_unval))
-    #}
-    ### -------------------------------------------------- P(Y*|X*,Y,X)
-    ###################################################################
     ### P(X|X*) -------------------------------------------------------
-    if (errorsX & errorsY) {
-      ### p_kj ------------------------------------------------------
-      ### need to reorder pX so that it's x1, ..., x1, ...., xm, ..., xm-
-      ### multiply by the B-spline terms
-      pX = prev_p[rep(rep(seq(1, m), each = (N - n)), times = 2), ] * comp_dat_unval[, Bspline]
-      ### ---------------------------------------------------------- p_kj
-    } else if (errorsX) {
-      ### p_kj ----------------------------------------------------------
-      ### need to reorder pX so that it's x1, ..., x1, ...., xm, ..., xm-
-      ### multiply by the B-spline terms
-      pX = prev_p[rep(seq(1, m), each = (N - n)), ] * comp_dat_unval[, Bspline]
-      ### ---------------------------------------------------------- p_kj
-    } #else if (errorsY) {
-      #pX = rep(1, times = nrow(comp_dat_unval))
-    #}
+    ### p_kj ----------------------------------------------------------
+    ### need to reorder pX so that it's x1, ..., x1, ...., xm, ..., xm-
+    ### multiply by the B-spline terms
+    pX = prev_p[rep(seq(1, m), each = (N - n)), ] * 
+      comp_dat_unval[, Bspline]
+    ### ---------------------------------------------------------- p_kj
     ### ------------------------------------------------------- P(X|X*)
     ###################################################################
     ### Estimate conditional expectations -----------------------------
-    if (errorsY & errorsX) {
-      ### P(Y|X,C)P(Y*|X*,Y,X,C)p_kjB(X*) -----------------------------
-      psi_num = c(pY_X * pYstar) * pX
-      ### Update denominator ------------------------------------------
-      #### Sum up all rows per id (e.g. sum over xk/y) ----------------
-      psi_denom = rowsum(psi_num, group = rep(seq(1, (N - n)), times = 2 * m))
-      #### Then sum over the sn splines -------------------------------
-      psi_denom = rowSums(psi_denom)
-      #### Avoid NaN resulting from dividing by 0 ---------------------
-      psi_denom[psi_denom == 0] = 1
-      ### And divide them! --------------------------------------------
-      psi_t = psi_num / psi_denom
-      ### Update the w_kyi for unvalidated subjects -------------------
-      ### by summing across the splines/ columns of psi_t -------------
-      w_t = rowSums(psi_t)
-      ### Update the u_kji for unvalidated subjects ------------------
-      ### by summing over Y = 0/1 w/i each i, k ----------------------
-      ### add top half of psi_t (y = 0) to bottom half (y = 1) -------
-      u_t = psi_t[c(1:(m * (N - n))), ] + psi_t[- c(1:(m * (N - n))), ]
-    } else if (errorsX) {
-      ### P(Y|X,C)p_kjB(X*) -------------------------------------------
-      psi_num = c(pY_X) * pX
-      ### Update denominator ------------------------------------------
-      #### Sum up all rows per id (e.g. sum over xk) ------------------
-      psi_denom = rowsum(psi_num, group = rep(seq(1, (N - n)), times = m))
-      #### Then sum over the sn splines -------------------------------
-      psi_denom = rowSums(psi_denom)
-      #### Avoid NaN resulting from dividing by 0 ---------------------
-      psi_denom[psi_denom == 0] = 1
-      ### And divide them! --------------------------------------------
-      psi_t = psi_num / psi_denom
-      ### Update the w_kyi for unvalidated subjects -------------------
-      ### by summing across the splines/ columns of psi_t -------------
-      w_t = rowSums(psi_t)
-    } else if (errorsY) {
-      ### P(Y|X,C)P(Y*|Y,X,C) -----------------------------------------
-      #### Sum up all rows per id (e.g. sum over y) -------------------
-      psi_num = matrix(c(pY_X * pYstar), ncol = 1)
-      psi_denom = rowsum(psi_num, group = rep(seq(1, (N - n)), times = 2))
-      #### Avoid NaN resulting from dividing by 0 ---------------------
-      psi_denom[psi_denom == 0] = 1
-      ### And divide them! --------------------------------------------
-      psi_t = psi_num / psi_denom
-      ### Update the w_kyi for unvalidated subjects -------------------
-      w_t = psi_t
-    }
+    ### P(Y|X,C)p_kjB(X*) -------------------------------------------
+    psi_num = c(pY_X) * pX
+    ### Update denominator ------------------------------------------
+    #### Sum up all rows per id (e.g. sum over xk) ------------------
+    psi_denom = rowsum(psi_num, group = rep(seq(1, (N - n)), times = m))
+    #### Then sum over the sn splines -------------------------------
+    psi_denom = rowSums(psi_denom)
+    #### Avoid NaN resulting from dividing by 0 ---------------------
+    psi_denom[psi_denom == 0] = 1
+    ### And divide them! --------------------------------------------
+    psi_t = psi_num / psi_denom
+    ### Update the w_kyi for unvalidated subjects -------------------
+    ### by summing across the splines/ columns of psi_t -------------
+    w_t = rowSums(psi_t)
     ### ----------------------------- Estimate conditional expectations
     # ---------------------------------------------------------- E Step
     ###################################################################
@@ -324,12 +182,11 @@ logiSieve = function(analysis_formula, error_formula, data, initial_lr_params = 
     ### Gradient ------------------------------------------------------
     mu = theta_design_mat %*% prev_theta
     w_t = c(rep(1, n), w_t)
-    gradient_theta = matrix(data = c(colSums(w_t * c((comp_dat_all[, Y_val] - 1 + exp(-mu) / (1 + exp(- mu)))) * theta_design_mat)), ncol = 1)
+    gradient_theta = matrix(data = c(colSums(w_t * c((comp_dat_all[, Y] - 1 + exp(-mu) / (1 + exp(- mu)))) * theta_design_mat)), ncol = 1)
     ### ------------------------------------------------------ Gradient
     ### Hessian -------------------------------------------------------
     post_multiply = c((exp(- mu) / (1 + exp(- mu))) * (exp(- mu)/(1 + exp(- mu)) - 1)) * w_t * theta_design_mat
     hessian_theta = apply(theta_design_mat, MARGIN = 2, FUN = hessian_row, pm = post_multiply)
-
     new_theta = tryCatch(expr = prev_theta - solve(hessian_theta) %*% gradient_theta,
                           error = function(err) {
                             matrix(NA, nrow = nrow(prev_theta))
@@ -345,88 +202,32 @@ logiSieve = function(analysis_formula, error_formula, data, initial_lr_params = 
     theta_conv = abs(new_theta - prev_theta) < tol
     ## --------------------------------------------------- Update theta
     ###################################################################
-    if (errorsY) {
-      ## Update gamma using weighted logistic regression ----------------
-      mu = gamma_design_mat %*% prev_gamma
-      gradient_gamma = matrix(data = c(colSums(w_t * c((comp_dat_all[, c(Y_unval)] - 1 + exp(- mu) / (1 + exp(- mu)))) * gamma_design_mat)), ncol = 1)
-      ### ------------------------------------------------------ Gradient
-      ### Hessian -------------------------------------------------------
-      post_multiply = c(w_t * (exp(- mu) / (1 + exp(- mu))) * (exp(- mu) / (1 + exp(- mu)) - 1)) * gamma_design_mat
-      hessian_gamma = apply(gamma_design_mat, MARGIN = 2, FUN = hessian_row, pm = post_multiply)
-      new_gamma = tryCatch(expr = prev_gamma - solve(hessian_gamma) %*% gradient_gamma,
-                            error = function(err) {
-                              matrix(NA, nrow = nrow(prev_gamma))
-                            })
-      if (any(is.na(new_gamma))) {
-        new_gamma = suppressWarnings(matrix(glm(formula = error_formula, 
-                                                family = "binomial", 
-                                                data = data.frame(comp_dat_all), 
-                                                weights = w_t)$coefficients, 
-                                            ncol = 1))
-      }
-      # Check for convergence -----------------------------------------
-      gamma_conv = abs(new_gamma - prev_gamma) < tol
-      ## ---------------- Update gamma using weighted logistic regression
-    } else { gamma_conv = TRUE }
-    ###################################################################
     ## Update {p_kj} --------------------------------------------------
-    if (errorsX & errorsY) {
-      ### Update numerators by summing u_t over i = 1, ..., N ---------
-      new_p_num = p_val_num +
-        rowsum(u_t, group = rep(seq(1, m), each = (N - n)), reorder = TRUE)
-      new_p = t(t(new_p_num) / colSums(new_p_num))
-      ### Check for convergence ---------------------------------------
-      p_conv = abs(new_p - prev_p) < tol
-    } else if (errorsX) {
-      ### Update numerators by summing u_t over i = 1, ..., N ---------
-      new_p_num = p_val_num +
-        rowsum(psi_t, group = rep(seq(1, m), each = (N - n)), reorder = TRUE)
-      new_p = t(t(new_p_num) / colSums(new_p_num))
-      ### Check for convergence ---------------------------------------
-      p_conv = abs(new_p - prev_p) < tol
-    }
-    else { p_conv = TRUE }
+    ### Update numerators by summing u_t over i = 1, ..., N -----------
+    new_p_num = p_val_num +
+      rowsum(psi_t, group = rep(seq(1, m), each = (N - n)), reorder = TRUE)
+    new_p = t(t(new_p_num) / colSums(new_p_num))
+    ### Check for convergence ---------------------------------------
+    p_conv = abs(new_p - prev_p) < tol
     ## -------------------------------------------------- Update {p_kj}
     ###################################################################
     # M Step ----------------------------------------------------------
     ###################################################################
 
-    all_conv = c(theta_conv, gamma_conv, p_conv)
+    all_conv = c(theta_conv, p_conv)
     if (mean(all_conv) == 1) { CONVERGED = TRUE }
 
     # Update values for next iteration  -------------------------------
     it = it + 1
     prev_theta = new_theta
-    if (errorsY) { prev_gamma = new_gamma }
-    if (errorsX) { prev_p = new_p }
+    prev_p = new_p
     #  ------------------------------- Update values for next iteration
   }
 
-  rownames(new_theta) = c("Intercept", theta_pred)
-  if (errorsY) { rownames(new_gamma) = c("Intercept", gamma_pred) }
+  rownames(new_theta) = c("Intercept", X_val, C)
 
   if(!CONVERGED) {
     if(it > max_iter) { CONVERGED_MSG = "max_iter reached" }
-    if (errorsY) {
-      if(output == "logORs") {
-        return(list(model_coeff = data.frame(coeff = rep(NA, times = nrow(prev_theta)), se = NA),
-                    vcov = matrix(NA, nrow = length(new_theta), ncol = length(new_theta)),
-                    converged = CONVERGED,
-                    se_converged = NA,
-                    converged_msg = CONVERGED_MSG))
-      } else {
-        return(list(model_coeff = data.frame(coeff = rep(NA, times = nrow(prev_theta)), se = NA),
-                    outcome_error_coeff = data.frame(coeff = rep(NA, times = nrow(prev_gamma))),
-                    bspline_coeff = cbind(x_obs, NA),
-                    vcov = matrix(NA, nrow = length(new_theta), ncol = length(new_theta)),
-                    converged = CONVERGED,
-                    se_converged = NA,
-                    converged_msg = CONVERGED_MSG,
-                    iterations = it,
-                    od_loglik_at_conv = NA))  
-      }
-    }
-    
     if(output == "logORs") {
       return(list(model_coeff = data.frame(coeff = rep(NA, times = nrow(prev_theta)), se = NA),
                   vcov = matrix(NA, nrow = length(new_theta), ncol = length(new_theta)),
@@ -447,41 +248,34 @@ logiSieve = function(analysis_formula, error_formula, data, initial_lr_params = 
   if(CONVERGED) { CONVERGED_MSG = "Converged" }
   # ---------------------------------------------- Estimate theta using EM
   if(no_se) {
-    if (!errorsX) {
-      new_p = p_val_num = matrix(NA, nrow = 1, ncol = 1)
-    }
-    if (!errorsY) {
-      new_gamma = NA
-    }
     ## Calculate pl(theta) -------------------------------------------------
     od_loglik_theta = observed_data_loglik(N = N,
-                                               n = n,
-                                               Y_unval = Y_unval,
-                                               Y_val = Y_val,
-                                               X_unval = X_unval,
-                                               X_val = X_val,
-                                               C = C,
-                                               Bspline = Bspline,
-                                               comp_dat_all = comp_dat_all,
-                                               theta_pred = theta_pred,
-                                               gamma_pred = gamma_pred,
-                                               theta = new_theta,
-                                               gamma = new_gamma,
-                                               p = new_p)
+                                           n = n,
+                                           Y = Y,
+                                           X_val = X_val,
+                                           C = C,
+                                           Bspline = Bspline,
+                                           comp_dat_all = comp_dat_all,
+                                           theta_pred = theta_pred,
+                                           theta = new_theta,
+                                           p = new_p)
     
     if(output == "logORs") { 
       return(list(model_coeff = data.frame(coeff = new_theta,
                                            se = NA),
-                  vcov = matrix(NA, nrow = length(new_theta), ncol = length(new_theta)),
+                  vcov = matrix(data = NA, 
+                                nrow = length(new_theta), 
+                                ncol = length(new_theta)),
                   converged = CONVERGED,
                   se_converged = NA,
                   converged_msg = CONVERGED_MSG))
     } else {
       return(list(model_coeff = data.frame(coeff = new_theta,
                                            se = NA),
-                  outcome_error_coeff = data.frame(coeff = new_gamma),
                   bspline_coeff = cbind(x_obs, new_p),
-                  vcov = matrix(NA, nrow = length(new_theta), ncol = length(new_theta)),
+                  vcov = matrix(data = NA, 
+                                nrow = length(new_theta), 
+                                ncol = length(new_theta)),
                   converged = CONVERGED,
                   se_converged = NA,
                   converged_msg = CONVERGED_MSG,
@@ -492,59 +286,49 @@ logiSieve = function(analysis_formula, error_formula, data, initial_lr_params = 
     # Estimate Cov(theta) using profile likelihood -------------------------
     h_N = pert_scale * N ^ ( - 1 / 2) # perturbation ----------------------------
 
-    if (!errorsX) {
-      new_p = p_val_num = matrix(NA, nrow = 1, ncol = 1)
-    }
-    if (!errorsY) {
-      new_gamma = NA
-    }
-
     ## Calculate pl(theta) -------------------------------------------------
     od_loglik_theta = observed_data_loglik(N = N,
-                                            n = n,
-                                            Y_unval = Y_unval,
-                                            Y_val = Y_val,
-                                            X_unval = X_unval,
-                                            X_val = X_val,
-                                            C = C,
-                                            Bspline = Bspline,
-                                            comp_dat_all = comp_dat_all,
-                                            theta_pred = theta_pred,
-                                            gamma_pred = gamma_pred,
-                                            theta = new_theta,
-                                            gamma = new_gamma,
-                                            p = new_p)
+                                           n = n,
+                                           Y = Y,
+                                           X_val = X_val,
+                                           C = C,
+                                           Bspline = Bspline,
+                                           comp_dat_all = comp_dat_all,
+                                           theta_pred = theta_pred,
+                                           theta = new_theta,
+                                           p = new_p)
 
-    I_theta = matrix(od_loglik_theta, nrow = nrow(new_theta), ncol = nrow(new_theta))
+    I_theta = matrix(data = od_loglik_theta, 
+                     nrow = nrow(new_theta), 
+                     ncol = nrow(new_theta))
 
     single_pert_theta = sapply(X = seq(1, ncol(I_theta)),
-                                FUN = pl_theta,
-                                theta = new_theta,
-                                h_N = h_N,
-                                n = n,
-                                N = N,
-                                Y_unval = Y_unval,
-                                Y_val = Y_val,
-                                X_unval = X_unval,
-                                X_val = X_val,
-                                C = C,
-                                Bspline = Bspline,
-                                comp_dat_all = comp_dat_all,
-                                theta_pred = theta_pred,
-                                gamma_pred = gamma_pred,
-                                gamma0 = new_gamma,
-                                p0 = new_p,
-                                p_val_num = p_val_num,
-                                TOL = tol,
-                                MAX_ITER = max_iter)
+                               FUN = pl_theta,
+                               theta = new_theta,
+                               h_N = h_N,
+                               n = n,
+                               N = N,
+                               Y = Y,
+                               X_val = X_val,
+                               C = C,
+                               Bspline = Bspline,
+                               comp_dat_all = comp_dat_all,
+                               theta_pred = theta_pred,
+                               p0 = new_p,
+                               p_val_num = p_val_num,
+                               TOL = tol,
+                               MAX_ITER = max_iter)
 
     if (any(is.na(single_pert_theta))) {
-      I_theta = matrix(NA, nrow = nrow(new_theta), ncol = nrow(new_theta))
+      I_theta = matrix(data = NA, 
+                       nrow = nrow(new_theta), 
+                       ncol = nrow(new_theta))
       SE_CONVERGED = FALSE
     } else {
-      spt_wide = matrix(rep(c(single_pert_theta), times = ncol(I_theta)),
-                         ncol = ncol(I_theta),
-                         byrow = FALSE)
+      spt_wide = matrix(data = rep(c(single_pert_theta), 
+                            times = ncol(I_theta)),
+                        ncol = ncol(I_theta),
+                        byrow = FALSE)
       #for the each kth row of single_pert_theta add to the kth row / kth column of I_theta
       I_theta = I_theta - spt_wide - t(spt_wide)
       SE_CONVERGED = TRUE
@@ -559,21 +343,19 @@ logiSieve = function(analysis_formula, error_formula, data, initial_lr_params = 
                                   h_N = h_N,
                                   n = n,
                                   N = N,
-                                  Y_unval = Y_unval,
-                                  Y_val = Y_val,
-                                  X_unval = X_unval,
+                                  Y = Y,
                                   X_val = X_val,
                                   C = C,
                                   Bspline = Bspline,
                                   comp_dat_all = comp_dat_all,
                                   theta_pred = theta_pred,
-                                  gamma_pred = gamma_pred,
-                                  gamma0 = new_gamma,
                                   p0 = new_p,
                                   p_val_num = p_val_num,
                                   MAX_ITER = max_iter,
                                   TOL = tol)
-      dpt = matrix(0, nrow = nrow(I_theta), ncol = ncol(I_theta))
+      dpt = matrix(data = 0, 
+                   nrow = nrow(I_theta), 
+                   ncol = ncol(I_theta))
       dpt[c,c] = double_pert_theta[1] #Put double on the diagonal
       if(c < ncol(I_theta)) {
         ## And fill the others in on the cth row/ column
@@ -610,7 +392,6 @@ logiSieve = function(analysis_formula, error_formula, data, initial_lr_params = 
     } else {
       return(list(model_coeff = data.frame(coeff = new_theta,
                                            se = se_theta),
-                  outcome_error_coeff = data.frame(coeff = new_gamma),
                   bspline_coeff = cbind(x_obs, new_p),
                   vcov = cov_theta,
                   converged = CONVERGED,

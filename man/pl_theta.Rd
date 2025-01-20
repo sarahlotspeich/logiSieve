@@ -10,16 +10,12 @@ pl_theta(
   h_N,
   n,
   N,
-  Y_unval,
-  Y_val,
-  X_unval,
+  Y,
   X_val,
   C,
   Bspline,
   comp_dat_all,
   theta_pred,
-  gamma_pred,
-  gamma0 = NULL,
   p0 = NULL,
   p_val_num = NULL,
   TOL,
@@ -37,13 +33,9 @@ pl_theta(
 
 \item{N}{Phase I sample size}
 
-\item{Y_unval}{Column names with the unvalidated outcome. If \code{Y_unval} is null, the outcome is assumed to be error-free.}
+\item{Y}{Column name with the outcome.}
 
-\item{Y_val}{Column names with the validated outcome.}
-
-\item{X_unval}{Column name(s) with the unvalidated predictors.  If \code{X_unval} and \code{X_val} are \code{null}, all precictors are assumed to be error-free.}
-
-\item{X_val}{Column name(s) with the validated predictors. If \code{X_unval} and \code{X_val} are \code{null}, all precictors are assumed to be error-free.}
+\item{X_val}{Column name(s) with the validated predictors.}
 
 \item{C}{(Optional) Column name(s) with additional error-free covariates.}
 
@@ -53,10 +45,6 @@ pl_theta(
 
 \item{theta_pred}{Vector of columns in \code{comp_dat_all} that pertain to the predictors in the analysis model.}
 
-\item{gamma_pred}{Vector of columns in \code{comp_dat_all} that pertain to the predictors in the outcome error model.}
-
-\item{gamma0}{Starting values for \code{gamma}, the parameters for the outcome error model (a column vector)}
-
 \item{p0}{Starting values for \code{p}, the B-spline coefficients for the approximated covariate error model (a matrix)}
 
 \item{p_val_num}{Contributions of validated subjects to the numerator for \code{p}, which are fixed (a matrix)}
@@ -64,8 +52,6 @@ pl_theta(
 \item{TOL}{Tolerance between iterations in the EM algorithm used to define convergence.}
 
 \item{MAX_ITER}{Maximum number of iterations allowed in the EM algorithm.}
-
-\item{Validated}{Column name with the validation indicator. The validation indicator can be defined as \code{Validated = 1} or \code{TRUE} if the subject was validated and \code{Validated = 0} or \code{FALSE} otherwise.}
 }
 \value{
 Profile likelihood for \code{theta} after perturbing element \code{k} by \code{h_N}.

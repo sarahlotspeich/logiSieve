@@ -38,7 +38,6 @@ logiSieve(
 \value{
 A list with the following named slots:
 \item{model_coeff}{dataframe with final model coefficients and standard error estimates (where applicable) for the analysis model.}
-\item{outcome_error_coeff}{dataframe with final model coefficients for the outcome error model. (Only returned if \code{output = "all"}.)}
 \item{bspline_coeff}{dataframe with B-spline coefficients for the covariate error model. (Only returned if \code{output = "all"}.)}
 \item{vcov}{covariance matrix of \code{model_coeff} for the analysis model.}
 \item{converged}{indicator of EM algorithm convergence for parameter estimates.}
