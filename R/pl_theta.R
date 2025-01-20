@@ -9,6 +9,9 @@
 #' @param N Phase I sample size
 #' @param n Phase II sample size
 #' @param pY_X P(Y|X) for unvalidated rows at convergence for \code{theta}.
+#' @param Y Column names with the validated outcome.
+#' @param X_val Column name(s) with the validated predictors. 
+#' @param C (Optional) Column name(s) with additional error-free covariates.
 #' @param Bspline Vector of column names containing the B-spline basis functions.
 #' @param comp_dat_all Augmented dataset containing rows for each combination of unvalidated subjects' data with values from Phase II (a matrix)
 #' @param p0 Starting values for `p`, the B-spline coefficients for the approximated covariate error model (a matrix)
@@ -17,7 +20,7 @@
 #' @param MAX_ITER Maximum number of iterations allowed in the EM algorithm.
 #' @return Profile likelihood for `theta` after perturbing element `k` by `h_N`.
 
-pl_theta <- function(k, theta, h_N, n, N, pY_X, Bspline, comp_dat_all, 
+pl_theta <- function(k, theta, h_N, n, N, pY_X, Y, X_val, C, Bspline, comp_dat_all, 
                      p0 = NULL, p_val_num = NULL, TOL, MAX_ITER) {
   pert <- theta
   pert[k] <- pert[k] + h_N
