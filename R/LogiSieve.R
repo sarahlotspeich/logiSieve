@@ -187,11 +187,9 @@ logiSieve = function(analysis_formula, error_formula, data, initial_lr_params = 
     comp_dat_all = rbind(comp_dat_val, comp_dat_unval)
   }
 
-  theta_formula = as.formula(paste0(Y_val, "~", paste(theta_pred, collapse = "+")))
   theta_design_mat = cbind(int = 1, comp_dat_all[, theta_pred])
 
   if (errorsY) {
-    gamma_formula = as.formula(paste0(Y_unval, "~", paste(gamma_pred, collapse = "+")))
     gamma_design_mat = cbind(int = 1, comp_dat_all[, gamma_pred])
   }
 
@@ -203,14 +201,24 @@ logiSieve = function(analysis_formula, error_formula, data, initial_lr_params = 
   }
 
   if(initial_lr_params == "Zero") {
-    prev_theta = theta0 = matrix(0, nrow = ncol(theta_design_mat), ncol = 1)
+    prev_theta = theta0 = matrix(data = 0, 
+                                 nrow = ncol(theta_design_mat), 
+                                 ncol = 1)
     if (errorsY) {
-      prev_gamma = gamma0 = matrix(0, nrow = ncol(gamma_design_mat), ncol = 1)
+      prev_gamma = gamma0 = matrix(data = 0, 
+                                   nrow = ncol(gamma_design_mat), 
+                                   ncol = 1)
     }
   } else if(initial_lr_params == "Complete-data") {
-    prev_theta = theta0 = matrix(glm(formula = theta_formula, family = "binomial", data = data.frame(data[c(1:n), ]))$coefficients, ncol = 1)
+    prev_theta = theta0 = matrix(glm(formula = analysis_formula, 
+                                     family = "binomial", 
+                                     data = data.frame(data[c(1:n), ]))$coefficients, 
+                                 ncol = 1)
     if (errorsY) {
-      prev_gamma = gamma0 = matrix(glm(formula = gamma_formula, family = "binomial", data = data.frame(data[c(1:n), ]))$coefficient, ncol = 1)
+      prev_gamma = gamma0 = matrix(glm(formula = error_formula, 
+                                       family = "binomial", 
+                                       data = data.frame(data[c(1:n), ]))$coefficient, 
+                                   ncol = 1)
     }
   }
 
@@ -327,7 +335,7 @@ logiSieve = function(analysis_formula, error_formula, data, initial_lr_params = 
                             matrix(NA, nrow = nrow(prev_theta))
                           })
     if (any(is.na(new_theta))) {
-      new_theta = suppressWarnings(matrix(glm(formula = theta_formula, 
+      new_theta = suppressWarnings(matrix(glm(formula = analysis_formula, 
                                               family = "binomial", 
                                               data = data.frame(comp_dat_all), 
                                               weights = w_t)$coefficients, 
@@ -350,7 +358,7 @@ logiSieve = function(analysis_formula, error_formula, data, initial_lr_params = 
                               matrix(NA, nrow = nrow(prev_gamma))
                             })
       if (any(is.na(new_gamma))) {
-        new_gamma = suppressWarnings(matrix(glm(formula = gamma_formula, 
+        new_gamma = suppressWarnings(matrix(glm(formula = error_formula, 
                                                 family = "binomial", 
                                                 data = data.frame(comp_dat_all), 
                                                 weights = w_t)$coefficients, 
