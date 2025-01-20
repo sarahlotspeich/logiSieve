@@ -56,7 +56,6 @@ logiSieve = function(analysis_formula, error_formula, data, initial_lr_params = 
   sn = ncol(data[, Bspline])
   if(0 %in% colSums(data[c(1:n), Bspline])) {
     warning("Empty sieve in validated data. Reconstruct B-spline basis and try again.", call. = FALSE)
-    
     if(output == "logORs") {
       return(list(model_coeff = data.frame(coeff = NA, se = NA),
                   vcov = NA,
@@ -256,7 +255,7 @@ logiSieve = function(analysis_formula, error_formula, data, initial_lr_params = 
                                            C = C,
                                            Bspline = Bspline,
                                            comp_dat_all = comp_dat_all,
-                                           theta_pred = theta_pred,
+                                           theta_pred = c(X_val, C),
                                            theta = new_theta,
                                            p = new_p)
     
@@ -294,7 +293,7 @@ logiSieve = function(analysis_formula, error_formula, data, initial_lr_params = 
                                            C = C,
                                            Bspline = Bspline,
                                            comp_dat_all = comp_dat_all,
-                                           theta_pred = theta_pred,
+                                           theta_pred = c(X_val, C),
                                            theta = new_theta,
                                            p = new_p)
 
@@ -313,7 +312,7 @@ logiSieve = function(analysis_formula, error_formula, data, initial_lr_params = 
                                C = C,
                                Bspline = Bspline,
                                comp_dat_all = comp_dat_all,
-                               theta_pred = theta_pred,
+                               theta_pred = c(X_val, C),
                                p0 = new_p,
                                p_val_num = p_val_num,
                                TOL = tol,
@@ -348,7 +347,7 @@ logiSieve = function(analysis_formula, error_formula, data, initial_lr_params = 
                                   C = C,
                                   Bspline = Bspline,
                                   comp_dat_all = comp_dat_all,
-                                  theta_pred = theta_pred,
+                                  theta_pred = c(X_val, C),
                                   p0 = new_p,
                                   p_val_num = p_val_num,
                                   MAX_ITER = max_iter,
