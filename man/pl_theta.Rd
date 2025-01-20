@@ -18,8 +18,8 @@ pl_theta(
   comp_dat_all,
   p0 = NULL,
   p_val_num = NULL,
-  TOL,
-  MAX_ITER
+  tol,
+  max_iter
 )
 }
 \arguments{
@@ -49,9 +49,9 @@ pl_theta(
 
 \item{p_val_num}{Contributions of validated subjects to the numerator for \code{p}, which are fixed (a matrix)}
 
-\item{TOL}{Tolerance between iterations in the EM algorithm used to define convergence.}
+\item{tol}{tolerance between iterations in the EM algorithm used to define convergence.}
 
-\item{MAX_ITER}{Maximum number of iterations allowed in the EM algorithm.}
+\item{max_iter}{Maximum number of iterations allowed in the EM algorithm.}
 }
 \value{
 Profile likelihood for \code{theta} after perturbing element \code{k} by \code{h_N}.

@@ -313,8 +313,8 @@ logiSieve = function(analysis_formula, error_formula, data, initial_lr_params = 
                                comp_dat_all = comp_dat_all,
                                p0 = new_p,
                                p_val_num = p_val_num,
-                               TOL = tol,
-                               MAX_ITER = max_iter)
+                               tol = tol,
+                               max_iter = max_iter)
 
     if (any(is.na(single_pert_theta))) {
       I_theta = matrix(data = NA, 
@@ -348,8 +348,8 @@ logiSieve = function(analysis_formula, error_formula, data, initial_lr_params = 
                                  comp_dat_all = comp_dat_all,
                                  p0 = new_p,
                                  p_val_num = p_val_num,
-                                 MAX_ITER = max_iter,
-                                 TOL = tol)
+                                 max_iter = max_iter,
+                                 tol = tol)
       dpt = matrix(data = 0, 
                    nrow = nrow(I_theta), 
                    ncol = ncol(I_theta))

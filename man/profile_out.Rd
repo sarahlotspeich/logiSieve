@@ -13,8 +13,8 @@ profile_out(
   comp_dat_unval,
   p0,
   p_val_num,
-  TOL,
-  MAX_ITER
+  tol,
+  max_iter
 )
 }
 \arguments{
@@ -34,9 +34,9 @@ profile_out(
 
 \item{p_val_num}{Contributions of validated subjects to the numerator for \code{p}, which are fixed (a matrix)}
 
-\item{TOL}{Tolerance between iterations in the EM algorithm used to define convergence.}
+\item{tol}{tolerance between iterations in the EM algorithm used to define convergence.}
 
-\item{MAX_ITER}{Maximum number of iterations allowed in the EM algorithm.}
+\item{max_iter}{Maximum number of iterations allowed in the EM algorithm.}
 }
 \value{
 Profile likelihood for \code{theta}: the value of the observed-data log-likelihood after profiling out other parameters.

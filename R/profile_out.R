@@ -13,12 +13,12 @@
 #' @param comp_dat_unval Augmented dataset containing rows for each combination of unvalidated subjects' data with values from Phase II (a matrix)
 #' @param p0 Starting values for `p`, the B-spline coefficients for the approximated covariate error model (a matrix)
 #' @param p_val_num Contributions of validated subjects to the numerator for `p`, which are fixed (a matrix)
-#' @param TOL Tolerance between iterations in the EM algorithm used to define convergence.
-#' @param MAX_ITER Maximum number of iterations allowed in the EM algorithm.
+#' @param tol tolerance between iterations in the EM algorithm used to define convergence.
+#' @param max_iter Maximum number of iterations allowed in the EM algorithm.
 #' @return Profile likelihood for `theta`: the value of the observed-data log-likelihood after profiling out other parameters.
 
 profile_out <- function(theta, n, N, pYgivX_unval, Bspline = NULL, comp_dat_unval, 
-                        p0, p_val_num, TOL, MAX_ITER) {
+                        p0, p_val_num, tol, max_iter) {
   # Save useful constants
   sn <- ncol(p0)
   m <- nrow(p0)
@@ -84,8 +84,8 @@ profile_out <- function(theta, n, N, pYgivX_unval, Bspline = NULL, comp_dat_unva
     #  ------------------------------- Update values for next iteration
   }
 
-  if(it > MAX_ITER & !CONVERGED) {
-    CONVERGED_MSG <- "MAX_ITER reached"
+  if(it > max_iter & !CONVERGED) {
+    CONVERGED_MSG <- "max_iter reached"
     new_p <- matrix(data = NA, 
                     nrow = nrow(p0), 
                     ncol = ncol(p0))

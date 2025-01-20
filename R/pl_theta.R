@@ -16,12 +16,12 @@
 #' @param comp_dat_all Augmented dataset containing rows for each combination of unvalidated subjects' data with values from Phase II (a matrix)
 #' @param p0 Starting values for `p`, the B-spline coefficients for the approximated covariate error model (a matrix)
 #' @param p_val_num Contributions of validated subjects to the numerator for `p`, which are fixed (a matrix)
-#' @param TOL Tolerance between iterations in the EM algorithm used to define convergence.
-#' @param MAX_ITER Maximum number of iterations allowed in the EM algorithm.
+#' @param tol tolerance between iterations in the EM algorithm used to define convergence.
+#' @param max_iter Maximum number of iterations allowed in the EM algorithm.
 #' @return Profile likelihood for `theta` after perturbing element `k` by `h_N`.
 
 pl_theta <- function(k, theta, h_N, n, N, pYgivX_unval, Y, X_val, C, Bspline, comp_dat_all, 
-                     p0 = NULL, p_val_num = NULL, TOL, MAX_ITER) {
+                     p0 = NULL, p_val_num = NULL, tol, max_iter) {
   pert <- theta
   pert[k] <- pert[k] + h_N
   pl_params <- profile_out(theta = pert,
@@ -32,8 +32,8 @@ pl_theta <- function(k, theta, h_N, n, N, pYgivX_unval, Y, X_val, C, Bspline, co
                            comp_dat_unval = comp_dat_all[-c(1:n), ],
                            p0 = p0,
                            p_val_num = p_val_num,
-                           TOL = TOL,
-                           MAX_ITER = MAX_ITER)
+                           tol = tol,
+                           max_iter = max_iter)
   if(pl_params$converged) {
     od_loglik_pert <- observed_data_loglik(N = N,
                                            n = n,
