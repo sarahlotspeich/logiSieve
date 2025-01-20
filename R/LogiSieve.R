@@ -22,6 +22,8 @@
 #' \item{iterations}{number of iterations completed by EM algorithm to find parameter estimates. (Only returned if \code{output = "all"}.)}
 #' \item{od_loglik_at_conv}{value of the observed-data log-likelihood at convergence. (Only returned if \code{output = "all"}.)}
 #' @export
+#' @importFrom stats as.formula
+#' @importFrom stats glm
 
 logiSieve = function(analysis_formula, error_formula, data, initial_lr_params = "Zero", 
                      pert_scale = 1, no_se = FALSE, tol = 1E-4, max_iter = 1000, output = "logORs")
