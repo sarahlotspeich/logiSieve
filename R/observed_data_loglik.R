@@ -24,7 +24,7 @@ observed_data_loglik <- function(N, n, Y = NULL, X_val = NULL, C = NULL, Bspline
   # For validated subjects --------------------------------------------------------
   #################################################################################
   ## Sum over log[P_theta(Yi|Xi)] -------------------------------------------------
-  pY_X <- 1 / (1 + exp(-as.numeric(cbind(int = 1, comp_dat_all[c(1:n), theta_pred]) %*% theta)))
+  pY_X <- 1 / (1 + exp(-as.numeric(cbind(int = 1, comp_dat_all[c(1:n), c(X_val, C)]) %*% theta)))
   pY_X <- ifelse(as.vector(comp_dat_all[c(1:n), c(Y)]) == 0, 1 - pY_X, pY_X)
   return_loglik <- sum(log(pY_X))
   ## ------------------------------------------------- Sum over log[P_theta(Yi|Xi)]
@@ -40,7 +40,7 @@ observed_data_loglik <- function(N, n, Y = NULL, X_val = NULL, C = NULL, Bspline
 
   # For unvalidated subjects ------------------------------------------------------
   ## Calculate P_theta(y|x) for all (y,xk) ----------------------------------------
-  pY_X <- 1 / (1 + exp(-as.numeric(cbind(int = 1, comp_dat_all[-c(1:n), theta_pred]) %*% theta)))
+  pY_X <- 1 / (1 + exp(-as.numeric(cbind(int = 1, comp_dat_all[-c(1:n), c(X_val, C)]) %*% theta)))
   pY_X[which(comp_dat_all[-c(1:n), Y] == 0)] <- 1 - pY_X[which(comp_dat_all[-c(1:n), Y] == 0)]
   ## ---------------------------------------- Calculate P_theta(y|x) for all (y,xk)
   ################################################################################
