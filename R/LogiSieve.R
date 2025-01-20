@@ -132,7 +132,7 @@ logiSieve = function(analysis_formula, error_formula, data, initial_lr_params = 
                                  ncol = 1)
   }
 
-  # Estimate theta using EM -------------------------------------------
+  # Estimate theta and p using EM -----------------------------------
   CONVERGED = FALSE
   CONVERGED_MSG = "Unknown"
   it = 1
