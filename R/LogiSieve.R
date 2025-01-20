@@ -366,9 +366,11 @@ logiSieve = function(analysis_formula, error_formula, data, initial_lr_params = 
     I_theta = h_N ^ (- 2) * I_theta
 
     cov_theta = tryCatch(expr = - solve(I_theta),
-                          error = function(err) {
-                            matrix(NA, nrow = nrow(I_theta), ncol = ncol(I_theta))
-                          }
+                         error = function(err) {
+                            matrix(data = NA, 
+                                   nrow = nrow(I_theta), 
+                                   ncol = ncol(I_theta))
+                           }
     )
     # ------------------------- Estimate Cov(theta) using profile likelihood
     # if(any(diag(cov_theta) < 0)) {
