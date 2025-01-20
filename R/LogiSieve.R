@@ -119,8 +119,8 @@ logiSieve = function(analysis_formula, error_formula, data, initial_lr_params = 
 
     # 2 (m x n)xd matrices (y=0/y=1) of each (one column per person, --
     # one row per x) --------------------------------------------------
-    suppressWarnings(comp_dat_unval = cbind(data[-c(1:n), c(Y_unval, setdiff(x = pred, y = c(Y_val, X_val)), Bspline)],
-                                             x_obs_stacked))
+    comp_dat_unval = suppressWarnings(cbind(data[-c(1:n), c(Y_unval, setdiff(x = pred, y = c(Y_val, X_val)), Bspline)],
+                                            x_obs_stacked))
     comp_dat_y0 = data.frame(comp_dat_unval, Y = 0)
     comp_dat_y1 = data.frame(comp_dat_unval, Y = 1)
     colnames(comp_dat_y0)[length(colnames(comp_dat_y0))] = colnames(comp_dat_y1)[length(colnames(comp_dat_y1))] = Y_val
@@ -152,8 +152,8 @@ logiSieve = function(analysis_formula, error_formula, data, initial_lr_params = 
     comp_dat_val = data.matrix(comp_dat_val)
 
     # (m x n)xd vectors of each (one column per person, one row per x) --
-    suppressWarnings(
-      comp_dat_unval = data.matrix(
+    comp_dat_unval = suppressWarnings(
+      data.matrix(
         cbind(data[-c(1:n), c(Y_val, setdiff(x = pred, y = c(X_val)), Bspline)],
               x_obs_stacked,
               k = rep(seq(1, m), each = (N - n)))
@@ -327,7 +327,11 @@ logiSieve = function(analysis_formula, error_formula, data, initial_lr_params = 
                             matrix(NA, nrow = nrow(prev_theta))
                           })
     if (any(is.na(new_theta))) {
-      suppressWarnings(new_theta = matrix(glm(formula = theta_formula, family = "binomial", data = data.frame(comp_dat_all), weights = w_t)$coefficients, ncol = 1))
+      new_theta = suppressWarnings(matrix(glm(formula = theta_formula, 
+                                              family = "binomial", 
+                                              data = data.frame(comp_dat_all), 
+                                              weights = w_t)$coefficients, 
+                                          ncol = 1))
     }
     ### Check for convergence -----------------------------------------
     theta_conv = abs(new_theta - prev_theta) < tol
@@ -346,7 +350,11 @@ logiSieve = function(analysis_formula, error_formula, data, initial_lr_params = 
                               matrix(NA, nrow = nrow(prev_gamma))
                             })
       if (any(is.na(new_gamma))) {
-        suppressWarnings(new_gamma = matrix(glm(formula = gamma_formula, family = "binomial", data = data.frame(comp_dat_all), weights = w_t)$coefficients, ncol = 1))
+        new_gamma = suppressWarnings(matrix(glm(formula = gamma_formula, 
+                                                family = "binomial", 
+                                                data = data.frame(comp_dat_all), 
+                                                weights = w_t)$coefficients, 
+                                            ncol = 1))
       }
       # Check for convergence -----------------------------------------
       gamma_conv = abs(new_gamma - prev_gamma) < tol
