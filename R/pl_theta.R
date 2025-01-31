@@ -8,7 +8,6 @@
 #' @param h_N Size of the small perturbation in `theta[k]`, by default chosen to be `h_N =  N ^ ( - 1 / 2)`
 #' @param N Phase I sample size
 #' @param n Phase II sample size
-#' @param theta_design_mat Design matrix for model P(Y|X) for validated and unvalidated rows. 
 #' @param Y Column names with the validated outcome.
 #' @param X_val Column name(s) with the validated predictors. 
 #' @param C (Optional) Column name(s) with additional error-free covariates.
@@ -20,9 +19,9 @@
 #' @param max_iter Maximum number of iterations allowed in the EM algorithm.
 #' @return Profile likelihood for `theta` after perturbing element `k` by `h_N`.
 
-pl_theta <- function(k, theta, h_N, N, n, theta_design_mat, 
-                     Y, X_val, C, Bspline, comp_dat_all, 
-                     p0 = NULL, p_val_num = NULL, tol, max_iter) {
+pl_theta <- function(k, theta, h_N, N, n, Y, X_val, C, Bspline, 
+                     comp_dat_all, p0 = NULL, p_val_num = NULL, 
+                     tol, max_iter) {
   # Perturb the kth entry in theta by h_N
   pert <- theta
   pert[k] <- pert[k] + h_N
@@ -31,8 +30,9 @@ pl_theta <- function(k, theta, h_N, N, n, theta_design_mat,
   pl_params <- profile_out(theta = pert, 
                            N = N, 
                            n = n, 
-                           theta_design_mat = theta_design_mat, 
                            Y = Y, 
+                           X_val = X_val, 
+                           C = C,
                            Bspline = Bspline, 
                            comp_dat_all = comp_dat_all, 
                            p0 = p0, 

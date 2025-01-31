@@ -10,7 +10,6 @@ pl_theta(
   h_N,
   N,
   n,
-  theta_design_mat,
   Y,
   X_val,
   C,
@@ -32,8 +31,6 @@ pl_theta(
 \item{N}{Phase I sample size}
 
 \item{n}{Phase II sample size}
-
-\item{theta_design_mat}{Design matrix for model P(Y|X) for validated and unvalidated rows.}
 
 \item{Y}{Column names with the validated outcome.}
 

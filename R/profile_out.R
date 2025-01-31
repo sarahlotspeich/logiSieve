@@ -10,6 +10,8 @@
 #' @param n Phase II sample size
 #' @param theta_design_mat Design matrix for model P(Y|X) for validated and unvalidated rows. 
 #' @param Y Column names with the validated outcome.
+#' @param X_val Column name(s) with the validated predictors. 
+#' @param C (Optional) Column name(s) with additional error-free covariates.
 #' @param Bspline Vector of column names containing the B-spline basis functions.
 #' @param comp_dat_all Augmented dataset containing rows for validated subjects and each combination of unvalidated subjects' data with values from Phase II
 #' @param p0 Starting values for `p`, the B-spline coefficients for the approximated covariate error model (a matrix)
@@ -18,7 +20,7 @@
 #' @param max_iter Maximum number of iterations allowed in the EM algorithm.
 #' @return Profile likelihood for `theta`: the value of the observed-data log-likelihood after profiling out other parameters.
 
-profile_out <- function(theta, N, n, theta_design_mat, Y, Bspline, 
+profile_out <- function(theta, N, n, Y, X_val, C, Bspline, 
                         comp_dat_all, p0, p_val_num, tol, max_iter) {
   # Save useful constants -------------------------------------------
   ## Dimensions and starting values ---------------------------------
@@ -26,8 +28,16 @@ profile_out <- function(theta, N, n, theta_design_mat, Y, Bspline,
   m <- nrow(p0)
   prev_p <- p0
   
+  ## Create design matrix for P(Y|X,C) model ------------------------
+  ### Only among unvalidated rows -----------------------------------
+  theta_design_mat = cbind(int = 1, 
+                           comp_dat_all[-c(1:n), c(X_val, C)])
+  ### Convert complete data to matrix -------------------------------
+  comp_dat_all = as.matrix(comp_dat_all)
+  
   ## Calculate P(Y|X) for theta, since it won't update --------------
-  mu_theta = as.numeric(theta_design_mat[-c(1:n), ] %*% theta)
+  ### Only among unvalidated rows -----------------------------------
+  mu_theta = as.numeric(theta_design_mat %*% theta)
   pY_X = 1 / (1 + exp(- mu_theta))
   I_y0 = comp_dat_all[-c(1:n), Y] == 0
   pY_X[I_y0] = 1 - pY_X[I_y0]
@@ -50,7 +60,7 @@ profile_out <- function(theta, N, n, theta_design_mat, Y, Bspline,
     ###################################################################
     ### Estimate conditional expectations -----------------------------
     ### P(Y|X,C)p_kjB(X*) -------------------------------------------
-    psi_num = c(pY_X) * pX
+    psi_num = pY_X * pX
     ### Update denominator ------------------------------------------
     #### Sum up all rows per id (e.g. sum over xk) ------------------
     psi_denom = rowsum(x = psi_num, 

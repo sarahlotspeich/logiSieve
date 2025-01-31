@@ -8,8 +8,9 @@ profile_out(
   theta,
   N,
   n,
-  theta_design_mat,
   Y,
+  X_val,
+  C,
   Bspline,
   comp_dat_all,
   p0,
@@ -25,9 +26,11 @@ profile_out(
 
 \item{n}{Phase II sample size}
 
-\item{theta_design_mat}{Design matrix for model P(Y|X) for validated and unvalidated rows.}
-
 \item{Y}{Column names with the validated outcome.}
+
+\item{X_val}{Column name(s) with the validated predictors.}
+
+\item{C}{(Optional) Column name(s) with additional error-free covariates.}
 
 \item{Bspline}{Vector of column names containing the B-spline basis functions.}
 
@@ -40,6 +43,8 @@ profile_out(
 \item{tol}{tolerance between iterations in the EM algorithm used to define convergence.}
 
 \item{max_iter}{Maximum number of iterations allowed in the EM algorithm.}
+
+\item{theta_design_mat}{Design matrix for model P(Y|X) for validated and unvalidated rows.}
 }
 \value{
 Profile likelihood for \code{theta}: the value of the observed-data log-likelihood after profiling out other parameters.
