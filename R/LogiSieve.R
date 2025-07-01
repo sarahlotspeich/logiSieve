@@ -15,6 +15,7 @@
 #' \item{model_coeff}{dataframe with final model coefficients and standard error estimates (where applicable) for the analysis model.}
 #' \item{bspline_coeff}{dataframe with B-spline coefficients for the covariate error model. (Only returned if \code{output = "all"}.)}
 #' \item{vcov}{covariance matrix of \code{model_coeff} for the analysis model.}
+#' \item{predicted}{vector with predictions for the error-free versions of covariates for unvalidated subjects. For validated subjects, their validated covariate is returned. (Only returned if \code{output = "all"}.)}
 #' \item{converged}{indicator of EM algorithm convergence for parameter estimates.}
 #' \item{se_converged}{indicator of standard error estimate convergence.}
 #' \item{converged_msg}{(where applicable) description of non-convergence.}
@@ -66,6 +67,7 @@ logiSieve = function(analysis_formula, error_formula, data, initial_lr_params = 
       return(list(model_coeff = data.frame(coeff = NA, se = NA),
                   bspline_coeff = NA,
                   vcov = NA,
+                  predicted = NA,
                   converged = NA,
                   se_converged = NA,
                   converged_msg = "B-spline error",
@@ -238,6 +240,7 @@ logiSieve = function(analysis_formula, error_formula, data, initial_lr_params = 
       return(list(model_coeff = data.frame(coeff = rep(NA, times = nrow(prev_theta)), se = NA),
                   bspline_coeff = cbind(x_obs, NA),
                   vcov = matrix(NA, nrow = length(new_theta), ncol = length(new_theta)),
+                  predicted = rep(NA, nrow(data)), 
                   converged = CONVERGED,
                   se_converged = NA,
                   converged_msg = CONVERGED_MSG,
@@ -246,7 +249,24 @@ logiSieve = function(analysis_formula, error_formula, data, initial_lr_params = 
     }
   }
   if(CONVERGED) { CONVERGED_MSG = "Converged" }
-  # ---------------------------------------------- Estimate theta using EM
+  
+  # Predict X | X*, Z (if requested) --------------------------------
+  if (output == "all") {
+    ## Create matrix with columns: (x_j) x (p_kj) 
+    xj_wide = matrix(data = x_obs, 
+                     nrow = nrow(new_p), 
+                     ncol = ncol(new_p), 
+                     byrow = FALSE)
+    xj_phat = xj_wide * new_p
+    
+    ## Calculate predicted X given error-prone X* and Z 
+    xhat = data[, X_val] ### initialize with validated X (when non-missing)
+    for (i in which(is.na(xhat))) {
+      xhat[i] = smle_predict_x(row_data = data[i, ], 
+                               bspline_coeff = xj_phat)
+    }
+  }
+  
   if(no_se) {
     ## Calculate pl(theta) -------------------------------------------------
     od_loglik_theta = observed_data_loglik(N = N,
@@ -275,6 +295,7 @@ logiSieve = function(analysis_formula, error_formula, data, initial_lr_params = 
                   vcov = matrix(data = NA, 
                                 nrow = length(new_theta), 
                                 ncol = length(new_theta)),
+                  predicted = xhat, 
                   converged = CONVERGED,
                   se_converged = NA,
                   converged_msg = CONVERGED_MSG,
@@ -392,6 +413,7 @@ logiSieve = function(analysis_formula, error_formula, data, initial_lr_params = 
                                            se = se_theta),
                   bspline_coeff = cbind(x_obs, new_p),
                   vcov = cov_theta,
+                  predicted = xhat, 
                   converged = CONVERGED,
                   se_converged = SE_CONVERGED,
                   converged_msg = CONVERGED_MSG,
