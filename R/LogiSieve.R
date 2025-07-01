@@ -253,7 +253,7 @@ logiSieve = function(analysis_formula, error_formula, data, initial_lr_params = 
   # Predict X | X*, Z (if requested) --------------------------------
   if (output == "all") {
     ## Create matrix with columns: (x_j) x (p_kj) 
-    xj_wide = matrix(data = x_obs, 
+    xj_wide = matrix(data = unlist(x_obs), 
                      nrow = nrow(new_p), 
                      ncol = ncol(new_p), 
                      byrow = FALSE)
