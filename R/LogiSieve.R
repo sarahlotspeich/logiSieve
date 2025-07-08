@@ -51,6 +51,7 @@ logiSieve = function(analysis_formula, error_formula, data, initial_lr_params = 
   n = sum(data[, "V"]) ## validated (phase II)
 
   # Reorder so that the n validated subjects are first ------------
+  data$orig_row = 1:nrow(data)
   data = data[order(as.numeric(data[, "V"]), decreasing = TRUE), ]
 
   # Add the B spline basis -------------------------------------------
@@ -295,7 +296,7 @@ logiSieve = function(analysis_formula, error_formula, data, initial_lr_params = 
                   vcov = matrix(data = NA, 
                                 nrow = length(new_theta), 
                                 ncol = length(new_theta)),
-                  predicted = xhat, 
+                  predicted = xhat[data$orig_row], 
                   converged = CONVERGED,
                   se_converged = NA,
                   converged_msg = CONVERGED_MSG,
@@ -413,7 +414,7 @@ logiSieve = function(analysis_formula, error_formula, data, initial_lr_params = 
                                            se = se_theta),
                   bspline_coeff = cbind(x_obs, new_p),
                   vcov = cov_theta,
-                  predicted = xhat, 
+                  predicted = xhat[data$orig_row], 
                   converged = CONVERGED,
                   se_converged = SE_CONVERGED,
                   converged_msg = CONVERGED_MSG,
