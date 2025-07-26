@@ -28,6 +28,9 @@
 logiSieve = function(analysis_formula, error_formula, data, initial_lr_params = "Zero", 
                      pert_scale = 1, no_se = FALSE, tol = 1E-4, max_iter = 1000, output = "logORs")
 {
+  # In case a tibble was supplied, convert data to data.frame
+  data = data.frame(data)
+  
   # Extract variable names from user-specified formulas
   Y = as.character(as.formula(analysis_formula))[2] ## outcome
   X_val = as.character(as.formula(error_formula))[2] ## error-free covariate
