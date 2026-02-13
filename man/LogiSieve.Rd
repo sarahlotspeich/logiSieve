@@ -8,6 +8,7 @@ logiSieve(
   analysis_formula,
   error_formula,
   data,
+  analysis_link = "logit",
   initial_lr_params = "Zero",
   pert_scale = 1,
   no_se = FALSE,
@@ -22,6 +23,8 @@ logiSieve(
 \item{error_formula}{formula, covariate error model formula (or coercible to formula), a formula expression as for other regression models. The response should be the error-free version of the error-prone of the covariate, and the covariate should be the names of the B-spline columns.}
 
 \item{data}{dataframe, a dataframe with one row per subject containing all variables from \code{analysis_formula} and \code{error_formula}.}
+
+\item{analysis_link}{string, for logistic regression analysis model \code{link = "logit"} (the default) and for log-binomial regression \code{link = "log"}.}
 
 \item{initial_lr_params}{character, initial values for parametric model parameters. Choices include (1) \code{"Zero"} (non-informative starting values) or (2) \code{"Complete-data"} (estimated based on validated subjects only)}
 
@@ -40,6 +43,7 @@ A list with the following named slots:
 \item{model_coeff}{dataframe with final model coefficients and standard error estimates (where applicable) for the analysis model.}
 \item{bspline_coeff}{dataframe with B-spline coefficients for the covariate error model. (Only returned if \code{output = "all"}.)}
 \item{vcov}{covariance matrix of \code{model_coeff} for the analysis model.}
+\item{predicted}{vector with predictions for the error-free versions of covariates for unvalidated subjects. For validated subjects, their validated covariate is returned. (Only returned if \code{output = "all"}.)}
 \item{converged}{indicator of EM algorithm convergence for parameter estimates.}
 \item{se_converged}{indicator of standard error estimate convergence.}
 \item{converged_msg}{(where applicable) description of non-convergence.}
