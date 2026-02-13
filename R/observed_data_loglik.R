@@ -13,18 +13,23 @@
 #' @param comp_dat_all Augmented dataset containing rows for each combination of unvalidated subjects' data with values from Phase II (a matrix)
 #' @param theta Parameters for the analysis model (a column vector)
 #' @param p B-spline coefficients for the approximated covariate error model (a matrix)
+#' @param analysis_link String specifying link function for the analysis model
 #' @return Scalar value of the function
 #' @export
 
 observed_data_loglik <- function(N, n, Y = NULL, X_val = NULL, C = NULL, Bspline = NULL, 
-                                 comp_dat_all, theta, p) {
+                                 comp_dat_all, theta, p, analysis_link) {
   #sn <- ncol(p)
   m <- nrow(p)
   
   # For validated subjects --------------------------------------------------------
   #################################################################################
   ## Sum over log[P_theta(Yi|Xi)] -------------------------------------------------
-  pY_X <- 1 / (1 + exp(-as.numeric(cbind(int = 1, comp_dat_all[c(1:n), c(X_val, C)]) %*% theta)))
+  if (analysis_link == "logit") {
+    pY_X <- 1 / (1 + exp(-as.numeric(cbind(int = 1, comp_dat_all[c(1:n), c(X_val, C)]) %*% theta)))  
+  } else if (analysis_link == "log") {
+    pY_X <- exp(as.numeric(cbind(int = 1, comp_dat_all[c(1:n), c(X_val, C)]) %*% theta))
+  }
   pY_X <- ifelse(as.vector(comp_dat_all[c(1:n), c(Y)]) == 0, 1 - pY_X, pY_X)
   return_loglik <- sum(log(pY_X))
   ## ------------------------------------------------- Sum over log[P_theta(Yi|Xi)]
@@ -40,7 +45,11 @@ observed_data_loglik <- function(N, n, Y = NULL, X_val = NULL, C = NULL, Bspline
 
   # For unvalidated subjects ------------------------------------------------------
   ## Calculate P_theta(y|x) for all (y,xk) ----------------------------------------
-  pY_X <- 1 / (1 + exp(-as.numeric(cbind(int = 1, comp_dat_all[-c(1:n), c(X_val, C)]) %*% theta)))
+  if (analysis_link == "logit") {
+    pY_X <- 1 / (1 + exp(-as.numeric(cbind(int = 1, comp_dat_all[-c(1:n), c(X_val, C)]) %*% theta)))  
+  } else if (analysis_link == "log") {
+    pY_X <- exp(as.numeric(cbind(int = 1, comp_dat_all[-c(1:n), c(X_val, C)]) %*% theta))
+  }
   pY_X[which(comp_dat_all[-c(1:n), Y] == 0)] <- 1 - pY_X[which(comp_dat_all[-c(1:n), Y] == 0)]
   ## ---------------------------------------- Calculate P_theta(y|x) for all (y,xk)
   ################################################################################

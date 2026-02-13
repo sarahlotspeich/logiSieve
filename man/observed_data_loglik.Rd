@@ -13,7 +13,8 @@ observed_data_loglik(
   Bspline = NULL,
   comp_dat_all,
   theta,
-  p
+  p,
+  analysis_link
 )
 }
 \arguments{
@@ -34,6 +35,8 @@ observed_data_loglik(
 \item{theta}{Parameters for the analysis model (a column vector)}
 
 \item{p}{B-spline coefficients for the approximated covariate error model (a matrix)}
+
+\item{analysis_link}{String specifying link function for the analysis model}
 }
 \value{
 Scalar value of the function
