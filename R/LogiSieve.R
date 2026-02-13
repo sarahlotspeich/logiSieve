@@ -34,6 +34,14 @@ logiSieve = function(analysis_formula, error_formula, data, analysis_link = "log
   
   # Extract variable names from user-specified formulas
   Y = as.character(as.formula(analysis_formula))[2] ## outcome
+  if (analysis_link == "log") {
+    N_Y = sub(pattern = ".*, ", replacement = "", x = Y)
+    N_Y = sub(pattern = "\\)", replacement = "", x = N_Y)
+    Y = sub(pattern = "cbind\\(", replacement = "", x = Y)
+    Y = sub(pattern = ",.*", replacement = "", x = Y)
+  } else if (analysis_link == "logit") {
+    N_Y = NULL
+  }
   X_val = as.character(as.formula(error_formula))[2] ## error-free covariate
   C = setdiff(x = unlist(strsplit(x = gsub(pattern = " ",
                                            replacement = "",
@@ -94,22 +102,22 @@ logiSieve = function(analysis_formula, error_formula, data, analysis_link = "log
   colnames(x_obs) = colnames(x_obs_stacked) = c(X_val)
 
   # Save static (X*,X,Y,C) since they don't change ---------------
-  comp_dat_val = data[c(1:n), c(Y, X_val, C, Bspline)]
+  comp_dat_val = data[c(1:n), c(Y, N_Y, X_val, C, Bspline)]
   comp_dat_val = merge(x = comp_dat_val, 
                        y = data.frame(x_obs, k = 1:m), 
                        all.x = TRUE)
-  comp_dat_val = comp_dat_val[, c(Y, X_val, C, Bspline, "k")]
+  comp_dat_val = comp_dat_val[, c(Y, N_Y, X_val, C, Bspline, "k")]
   comp_dat_val = data.matrix(comp_dat_val)
 
   # (m x n)xd vectors of each (one column per person, one row per x) --
   comp_dat_unval = suppressWarnings(
     data.matrix(
-      cbind(data[-c(1:n), c(Y, C, Bspline)],
+      cbind(data[-c(1:n), c(Y, N_Y, C, Bspline)],
             x_obs_stacked,
             k = rep(seq(1, m), each = (N - n)))
     )
   )
-  comp_dat_unval = comp_dat_unval[, c(Y, X_val, C, Bspline, "k")]
+  comp_dat_unval = comp_dat_unval[, c(Y, N_Y, X_val, C, Bspline, "k")]
   comp_dat_all = rbind(comp_dat_val, comp_dat_unval)
 
   # Initialize B-spline coefficients {p_kj}  ------------
@@ -148,14 +156,11 @@ logiSieve = function(analysis_formula, error_formula, data, analysis_link = "log
     # E Step ----------------------------------------------------------
     ## Update the psi_kyji for unvalidated subjects -------------------
     ### P(Y|X) --------------------------------------------------------
-    mu_theta = as.numeric(theta_design_mat[-c(1:n), ] %*% prev_theta)
-    if (link == "logit") {
-      pY_X = 1 / (1 + exp(- mu_theta))  
-    } else if (link == "log") {
-      pY_X = exp(mu_theta)
-    }
-    I_y0 = comp_dat_unval[, Y] == 0
-    pY_X[I_y0] = 1 - pY_X[I_y0]
+    pY_X = calc_pYgivX(data = theta_design_mat[-c(1:n), ], 
+                       successes = comp_dat_unval[, Y], 
+                       failures = comp_dat_unval[, N_Y], 
+                       theta = prev_theta, 
+                       analysis_link = analysis_link)
     ### -------------------------------------------------------- P(Y|X)
     ###################################################################
     ### P(X|X*) -------------------------------------------------------
@@ -289,6 +294,7 @@ logiSieve = function(analysis_formula, error_formula, data, analysis_link = "log
     od_loglik_theta = observed_data_loglik(N = N,
                                            n = n,
                                            Y = Y,
+                                           N_Y = N_Y,
                                            X_val = X_val,
                                            C = C,
                                            Bspline = Bspline,
