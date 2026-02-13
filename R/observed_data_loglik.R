@@ -6,7 +6,8 @@
 #'
 #' @param N Phase I sample size
 #' @param n Phase II sample size
-#' @param Y Column names with the validated outcome.
+#' @param Y Column names with the validated outcome (successes).
+#' @param N_Y (Optional) Column names with the validated outcome (failures).
 #' @param X_val Column name(s) with the validated predictors. 
 #' @param C (Optional) Column name(s) with additional error-free covariates.
 #' @param Bspline Vector of column names containing the B-spline basis functions.
@@ -17,7 +18,7 @@
 #' @return Scalar value of the function
 #' @export
 
-observed_data_loglik <- function(N, n, Y = NULL, X_val = NULL, C = NULL, Bspline = NULL, 
+observed_data_loglik <- function(N, n, Y = NULL, N_Y = NULL, X_val = NULL, C = NULL, Bspline = NULL, 
                                  comp_dat_all, theta, p, analysis_link) {
   #sn <- ncol(p)
   m <- nrow(p)
@@ -25,12 +26,11 @@ observed_data_loglik <- function(N, n, Y = NULL, X_val = NULL, C = NULL, Bspline
   # For validated subjects --------------------------------------------------------
   #################################################################################
   ## Sum over log[P_theta(Yi|Xi)] -------------------------------------------------
-  if (analysis_link == "logit") {
-    pY_X <- 1 / (1 + exp(-as.numeric(cbind(int = 1, comp_dat_all[c(1:n), c(X_val, C)]) %*% theta)))  
-  } else if (analysis_link == "log") {
-    pY_X <- exp(as.numeric(cbind(int = 1, comp_dat_all[c(1:n), c(X_val, C)]) %*% theta))
-  }
-  pY_X <- ifelse(as.vector(comp_dat_all[c(1:n), c(Y)]) == 0, 1 - pY_X, pY_X)
+  pY_X <- calc_pYgivX(data = cbind(int = 1, comp_dat_all[c(1:n), c(X_val, C)]), 
+                      successes = comp_dat_all[c(1:n), Y], 
+                      failures = comp_dat_all[c(1:n), N_Y], 
+                      theta = theta, 
+                      analysis_link = analysis_link)
   return_loglik <- sum(log(pY_X))
   ## ------------------------------------------------- Sum over log[P_theta(Yi|Xi)]
   #################################################################################
@@ -45,12 +45,11 @@ observed_data_loglik <- function(N, n, Y = NULL, X_val = NULL, C = NULL, Bspline
 
   # For unvalidated subjects ------------------------------------------------------
   ## Calculate P_theta(y|x) for all (y,xk) ----------------------------------------
-  if (analysis_link == "logit") {
-    pY_X <- 1 / (1 + exp(-as.numeric(cbind(int = 1, comp_dat_all[-c(1:n), c(X_val, C)]) %*% theta)))  
-  } else if (analysis_link == "log") {
-    pY_X <- exp(as.numeric(cbind(int = 1, comp_dat_all[-c(1:n), c(X_val, C)]) %*% theta))
-  }
-  pY_X[which(comp_dat_all[-c(1:n), Y] == 0)] <- 1 - pY_X[which(comp_dat_all[-c(1:n), Y] == 0)]
+  pY_X <- calc_pYgivX(data = cbind(int = 1, comp_dat_all[-c(1:n), c(X_val, C)]), 
+                      successes = comp_dat_all[-c(1:n), Y], 
+                      failures = comp_dat_all[-c(1:n), N_Y], 
+                      theta = theta, 
+                      analysis_link = analysis_link)
   ## ---------------------------------------- Calculate P_theta(y|x) for all (y,xk)
   ################################################################################
   ## Calculate Bj(Xi*) p_kj for all (k,j) ----------------------------------------
