@@ -8,6 +8,7 @@ observed_data_loglik(
   N,
   n,
   Y = NULL,
+  N_Y = NULL,
   X_val = NULL,
   C = NULL,
   Bspline = NULL,
@@ -22,7 +23,9 @@ observed_data_loglik(
 
 \item{n}{Phase II sample size}
 
-\item{Y}{Column names with the validated outcome.}
+\item{Y}{Column names with the validated outcome (successes).}
+
+\item{N_Y}{(Optional) Column names with the validated outcome (failures).}
 
 \item{X_val}{Column name(s) with the validated predictors.}
 
