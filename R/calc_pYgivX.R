@@ -1,4 +1,4 @@
-calc_pYgivX = function(data, successes, failures, theta) {
+calc_pYgivX = function(data, successes, failures = NULL, theta) {
   mu_theta = as.numeric(data %*% theta) ## beta0 + beta1x + ... 
   if (link == "logit") {
     pi_theta = 1 / (1 + exp(- mu_theta)) ## probability of success on a single trial
