@@ -38,15 +38,11 @@ profile_out <- function(theta, N, n, Y, X_val, C, Bspline,
   
   ## Calculate P(Y|X) for theta, since it won't update --------------
   ### Only among unvalidated rows -----------------------------------
-  mu_theta = as.numeric(theta_design_mat %*% theta)
-  if (analysis_link == "logit") {
-    pY_X = 1 / (1 + exp(- mu_theta))  
-  } else if (analysis_link == "log") {
-    pY_X = exp(mu_theta)
-  }
-  I_y0 = comp_dat_all[-c(1:n), Y] == 0
-  pY_X[I_y0] = 1 - pY_X[I_y0]
-  
+  pY_X = calc_pYgivX(data = theta_design_mat, 
+                     successes = comp_dat_all[-c(1:n), Y], 
+                     failures = comp_dat_all[-c(1:n), N_Y], 
+                     theta = theta, 
+                     analysis_link = analysis_link)
   # Estimate p using EM -----------------------------------------------
   CONVERGED = FALSE
   CONVERGED_MSG = "Unknown"
