@@ -18,10 +18,11 @@
 #' @param p_val_num Contributions of validated subjects to the numerator for `p`, which are fixed (a matrix)
 #' @param tol tolerance between iterations in the EM algorithm used to define convergence.
 #' @param max_iter Maximum number of iterations allowed in the EM algorithm.
+#' @param analysis_link String specifying link function for the analysis model
 #' @return Profile likelihood for `theta`: the value of the observed-data log-likelihood after profiling out other parameters.
 
 profile_out <- function(theta, N, n, Y, X_val, C, Bspline, 
-                        comp_dat_all, p0, p_val_num, tol, max_iter) {
+                        comp_dat_all, p0, p_val_num, tol, max_iter, analysis_link) {
   # Save useful constants -------------------------------------------
   ## Dimensions and starting values ---------------------------------
   sn <- ncol(p0)
@@ -38,7 +39,11 @@ profile_out <- function(theta, N, n, Y, X_val, C, Bspline,
   ## Calculate P(Y|X) for theta, since it won't update --------------
   ### Only among unvalidated rows -----------------------------------
   mu_theta = as.numeric(theta_design_mat %*% theta)
-  pY_X = 1 / (1 + exp(- mu_theta))
+  if (analysis_link == "logit") {
+    pY_X = 1 / (1 + exp(- mu_theta))  
+  } else if (analysis_link == "log") {
+    pY_X = exp(mu_theta)
+  }
   I_y0 = comp_dat_all[-c(1:n), Y] == 0
   pY_X[I_y0] = 1 - pY_X[I_y0]
   

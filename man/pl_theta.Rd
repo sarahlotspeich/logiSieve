@@ -18,7 +18,8 @@ pl_theta(
   p0 = NULL,
   p_val_num = NULL,
   tol,
-  max_iter
+  max_iter,
+  analysis_link
 )
 }
 \arguments{
@@ -49,6 +50,8 @@ pl_theta(
 \item{tol}{tolerance between iterations in the EM algorithm used to define convergence.}
 
 \item{max_iter}{Maximum number of iterations allowed in the EM algorithm.}
+
+\item{analysis_link}{String specifying link function for the analysis model}
 }
 \value{
 Profile likelihood for \code{theta} after perturbing element \code{k} by \code{h_N}.

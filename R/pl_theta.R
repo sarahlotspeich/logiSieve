@@ -17,11 +17,12 @@
 #' @param p_val_num Contributions of validated subjects to the numerator for `p`, which are fixed (a matrix)
 #' @param tol tolerance between iterations in the EM algorithm used to define convergence.
 #' @param max_iter Maximum number of iterations allowed in the EM algorithm.
+#' @param analysis_link String specifying link function for the analysis model
 #' @return Profile likelihood for `theta` after perturbing element `k` by `h_N`.
 
 pl_theta <- function(k, theta, h_N, N, n, Y, X_val, C, Bspline, 
                      comp_dat_all, p0 = NULL, p_val_num = NULL, 
-                     tol, max_iter) {
+                     tol, max_iter, analysis_link) {
   # Perturb the kth entry in theta by h_N
   pert <- theta
   pert[k] <- pert[k] + h_N
@@ -38,7 +39,8 @@ pl_theta <- function(k, theta, h_N, N, n, Y, X_val, C, Bspline,
                            p0 = p0, 
                            p_val_num = p_val_num, 
                            tol = tol, 
-                           max_iter = max_iter)
+                           max_iter = max_iter, 
+                           analysis_link = analysis_link)
   
   # If profile parameters converged, calculate observed-data log-likelihood
   if(pl_params$converged) {
@@ -50,7 +52,8 @@ pl_theta <- function(k, theta, h_N, N, n, Y, X_val, C, Bspline,
                                            Bspline = Bspline,
                                            comp_dat_all = comp_dat_all,
                                            theta = pert,
-                                           p = pl_params$p_at_conv)
+                                           p = pl_params$p_at_conv, 
+                                           analysis_link = analysis_link)
 
   } else { od_loglik_pert <- NA }
   return(od_loglik_pert)

@@ -16,7 +16,8 @@ profile_out(
   p0,
   p_val_num,
   tol,
-  max_iter
+  max_iter,
+  analysis_link
 )
 }
 \arguments{
@@ -43,6 +44,8 @@ profile_out(
 \item{tol}{tolerance between iterations in the EM algorithm used to define convergence.}
 
 \item{max_iter}{Maximum number of iterations allowed in the EM algorithm.}
+
+\item{analysis_link}{String specifying link function for the analysis model}
 
 \item{theta_design_mat}{Design matrix for model P(Y|X) for validated and unvalidated rows.}
 }
