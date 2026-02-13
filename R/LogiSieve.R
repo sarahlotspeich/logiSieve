@@ -5,7 +5,7 @@
 #' @param analysis_formula formula, analysis model formula (or coercible to formula), a formula expression as for other regression models. The response should be the logistic regression model outcome.
 #' @param error_formula formula, covariate error model formula (or coercible to formula), a formula expression as for other regression models. The response should be the error-free version of the error-prone of the covariate, and the covariate should be the names of the B-spline columns.
 #' @param data dataframe, a dataframe with one row per subject containing all variables from \code{analysis_formula} and \code{error_formula}.
-#' @param analysis_link string, for logistic regression analysis model \code{link = "logit"} (the default) and for log-binomial regression \code{link = "log"}.
+#' @param analysis_link string, for logistic regression analysis model \code{analysis_link = "logit"} (the default) and for log-binomial regression \code{analysis_link = "log"}.
 #' @param initial_lr_params character, initial values for parametric model parameters. Choices include (1) \code{"Zero"} (non-informative starting values) or (2) \code{"Complete-data"} (estimated based on validated subjects only)
 #' @param pert_scale scalar, size of the perturbation used in estimating the standard errors via profile likelihood. If none is supplied, default is \code{pert_scale = 1}.
 #' @param no_se logical, indicator for whether standard errors are desired. Defaults to \code{no_se = FALSE}.
@@ -196,12 +196,12 @@ logiSieve = function(analysis_formula, error_formula, data, analysis_link = "log
     ###################################################################
     ## Update theta using weighted logistic regression ----------------
     ### Gradient ------------------------------------------------------
-    mu = theta_design_mat %*% prev_theta
-    w_t = c(rep(1, n), w_t)
-    gradient_theta = matrix(data = c(colSums(w_t * c((comp_dat_all[, Y] - 1 + exp(-mu) / (1 + exp(- mu)))) * theta_design_mat)), ncol = 1)
+    w_t = c(rep(1, n), as.vector(w_t))
     ### ------------------------------------------------------ Gradient
     ### Hessian -------------------------------------------------------
-    if (link == "logit") {
+    if (analysis_link == "logit") {
+      mu = theta_design_mat %*% prev_theta
+      gradient_theta = matrix(data = c(colSums(w_t * c((comp_dat_all[, Y] - 1 + exp(-mu) / (1 + exp(- mu)))) * theta_design_mat)), ncol = 1)
       post_multiply = c((exp(- mu) / (1 + exp(- mu))) * (exp(- mu)/(1 + exp(- mu)) - 1)) * w_t * theta_design_mat
       hessian_theta = apply(theta_design_mat, MARGIN = 2, FUN = hessian_row, pm = post_multiply)
       new_theta = tryCatch(expr = prev_theta - solve(hessian_theta) %*% gradient_theta,
@@ -211,14 +211,14 @@ logiSieve = function(analysis_formula, error_formula, data, analysis_link = "log
       if (any(is.na(new_theta))) {
         new_theta = suppressWarnings(matrix(glm(formula = analysis_formula, 
                                                 family = binomial(link = analysis_link), 
-                                                data = data.frame(comp_dat_all), 
+                                                data = data.frame(cbind(comp_dat_all, w_t)), 
                                                 weights = w_t)$coefficients, 
                                             ncol = 1))
       }
-    } else if (link == "log") {
+    } else if (analysis_link == "log") {
       new_theta = suppressWarnings(matrix(glm(formula = analysis_formula, 
                                               family = binomial(link = analysis_link), 
-                                              data = data.frame(comp_dat_all), 
+                                              data = data.frame(cbind(comp_dat_all, w_t)), 
                                               weights = w_t)$coefficients, 
                                           ncol = 1))
     }

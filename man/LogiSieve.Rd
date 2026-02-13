@@ -24,7 +24,7 @@ logiSieve(
 
 \item{data}{dataframe, a dataframe with one row per subject containing all variables from \code{analysis_formula} and \code{error_formula}.}
 
-\item{analysis_link}{string, for logistic regression analysis model \code{link = "logit"} (the default) and for log-binomial regression \code{link = "log"}.}
+\item{analysis_link}{string, for logistic regression analysis model \code{analysis_link = "logit"} (the default) and for log-binomial regression \code{analysis_link = "log"}.}
 
 \item{initial_lr_params}{character, initial values for parametric model parameters. Choices include (1) \code{"Zero"} (non-informative starting values) or (2) \code{"Complete-data"} (estimated based on validated subjects only)}
 
