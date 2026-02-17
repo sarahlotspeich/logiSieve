@@ -119,7 +119,7 @@ logiSieve = function(analysis_formula, error_formula, data, analysis_link = "log
   )
   comp_dat_unval = comp_dat_unval[, c(Y, N_Y, X_val, C, Bspline, "k")]
   comp_dat_all = rbind(comp_dat_val, comp_dat_unval)
-  if(link == "log") {
+  if(analysis_link == "log") {
     comp_dat_all$N = comp_dat_all[, Y] + comp_dat_all[, N_Y]
   } 
 
