@@ -119,6 +119,9 @@ logiSieve = function(analysis_formula, error_formula, data, analysis_link = "log
   )
   comp_dat_unval = comp_dat_unval[, c(Y, N_Y, X_val, C, Bspline, "k")]
   comp_dat_all = rbind(comp_dat_val, comp_dat_unval)
+  if(link == "log") {
+    comp_dat_all$N = comp_dat_all[, Y] + comp_dat_all[, N_Y]
+  } 
 
   # Initialize B-spline coefficients {p_kj}  ------------
   ## Numerators sum B(Xi*) over k = 1,...,m -------------
@@ -216,11 +219,47 @@ logiSieve = function(analysis_formula, error_formula, data, analysis_link = "log
                                             ncol = 1))
       }
     } else if (analysis_link == "log") {
-      new_theta = suppressWarnings(matrix(glm(formula = analysis_formula, 
-                                              family = binomial(link = analysis_link), 
-                                              data = data.frame(cbind(comp_dat_all, w_t)), 
-                                              weights = w_t)$coefficients, 
-                                          ncol = 1))
+      mu = as.vector(theta_design_mat %*% prev_theta) ## mu = beta0 + beta1X + ... 
+      prob_pi = exp(mu) ## pi = exp(beta0 + beta1X + ...) = exp(mu) 
+      r = (comp_dat_all[, Y] - comp_dat_all[, "N"] * prob_pi) / (1 - prob_pi) ## residual = (Y - n x pi) / (1 - pi)
+      gradient_theta = matrix(data = c(colSums(w_t * theta_design_mat * r)), 
+                              ncol = 1) ## sum over w * X * r
+      d = w_t * prob_pi * (comp_dat_all[, "N"] - comp_dat_all[, Y]) / ((1 - prob_pi) ^ 2)
+      post_multiply = d * theta_design_mat
+      hessian_theta = - apply(X = theta_design_mat, 
+                              MARGIN = 2, 
+                              FUN = hessian_row, 
+                              pm = post_multiply)
+      new_step = tryCatch(expr = solve(hessian_theta) %*% gradient_theta,
+                          error = function(err) {
+                            matrix(data = NA, 
+                                   nrow = nrow(prev_theta))
+                            }
+                          )
+      theta_candidate = prev_theta - step
+      #### Back-tracking if needed 
+      if (!any(is.na(theta_candidate))) {
+        step_factor = 1
+        max_backtrack = 25
+        bt = 0
+        while (any(theta_design_mat %*% theta_candidate > 0) && bt < max_backtrack) {
+          step_factor = step_factor / 2
+          theta_candidate = prev_theta - step_factor * step
+          bt = bt + 1
+        }
+        # If still infeasible, fail safely
+        if (any(theta_design_mat %*% theta_candidate > 0)) {
+          theta_candidate = matrix(NA, nrow = nrow(prev_theta))
+        }
+      }
+      new_theta = theta_candidate
+      # if (any(is.na(new_theta))) {
+      #   new_theta = suppressWarnings(matrix(glm(formula = analysis_formula, 
+      #                                           family = binomial(link = analysis_link), 
+      #                                           data = data.frame(cbind(comp_dat_all, w_t)), 
+      #                                           weights = w_t)$coefficients, 
+      #                                       ncol = 1))
+      # }
     }
     ### Check for convergence -----------------------------------------
     theta_conv = abs(new_theta - prev_theta) < tol
