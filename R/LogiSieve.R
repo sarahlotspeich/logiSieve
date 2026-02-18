@@ -27,7 +27,8 @@
 #' @importFrom stats glm
 
 logiSieve = function(analysis_formula, error_formula, data, analysis_link = "logit",
-                     initial_lr_params = "Zero", pert_scale = 1, no_se = FALSE, tol = 1E-4, max_iter = 1000, output = "logORs")
+                     initial_lr_params = "Zero", pert_scale = 1, no_se = FALSE, 
+                     tol = 1E-4, max_iter = 1000, output = "logORs")
 {
   # In case a tibble was supplied, convert data to data.frame
   data = data.frame(data)
@@ -120,7 +121,9 @@ logiSieve = function(analysis_formula, error_formula, data, analysis_link = "log
   comp_dat_unval = comp_dat_unval[, c(Y, N_Y, X_val, C, Bspline, "k")]
   comp_dat_all = rbind(comp_dat_val, comp_dat_unval)
   if(analysis_link == "log") {
-    comp_dat_all$N = comp_dat_all[, Y] + comp_dat_all[, N_Y]
+    ## Add a column with the trial size 
+    comp_dat_all = cbind(comp_dat_all, 
+                         N = comp_dat_all[, Y] + comp_dat_all[, N_Y])
   } 
 
   # Initialize B-spline coefficients {p_kj}  ------------
@@ -236,7 +239,7 @@ logiSieve = function(analysis_formula, error_formula, data, analysis_link = "log
                                    nrow = nrow(prev_theta))
                             }
                           )
-      theta_candidate = prev_theta - step
+      theta_candidate = prev_theta - new_step
       #### Back-tracking if needed 
       if (!any(is.na(theta_candidate))) {
         step_factor = 1
@@ -244,7 +247,7 @@ logiSieve = function(analysis_formula, error_formula, data, analysis_link = "log
         bt = 0
         while (any(theta_design_mat %*% theta_candidate > 0) && bt < max_backtrack) {
           step_factor = step_factor / 2
-          theta_candidate = prev_theta - step_factor * step
+          theta_candidate = prev_theta - step_factor * new_step
           bt = bt + 1
         }
         # If still infeasible, fail safely
