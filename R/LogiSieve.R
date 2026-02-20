@@ -35,7 +35,7 @@ logiSieve = function(analysis_formula, error_formula, data, analysis_link = "log
   
   # Extract variable names from user-specified formulas
   Y = as.character(as.formula(analysis_formula))[2] ## outcome
-  if (analysis_link == "log") {
+  if (grepl(pattern = "cbind", x = Y)) { ## Check for (Y, N-Y) outcome formula
     N_Y = sub(pattern = ".*, ", replacement = "", x = Y)
     N_Y = sub(pattern = "\\)", replacement = "", x = N_Y)
     Y = sub(pattern = "cbind\\(", replacement = "", x = Y)
@@ -120,16 +120,20 @@ logiSieve = function(analysis_formula, error_formula, data, analysis_link = "log
   )
   comp_dat_unval = comp_dat_unval[, c(Y, N_Y, X_val, C, Bspline, "k")]
   comp_dat_all = rbind(comp_dat_val, comp_dat_unval)
-  if(analysis_link == "log") {
+  if(!is.null(N_Y)) {
     ## Add a column with the trial size 
     comp_dat_all = cbind(comp_dat_all, 
                          N = comp_dat_all[, Y] + comp_dat_all[, N_Y])
-  } 
+  } else {
+    ## Add a column with the trial size (assumed to be 1 for Bernoulli)
+    comp_dat_all = cbind(comp_dat_all, 
+                         N = 1)
+  }
 
-  # Initialize B-spline coefficients {p_kj}  ------------
-  ## Numerators sum B(Xi*) over k = 1,...,m -------------
-  ## Save as p_val_num for updates ----------------------
-  ## (contributions don't change) -----------------------
+  # Initialize B-spline coefficients {p_kj}  -----------------------
+  ## Numerators sum B(Xi*) over k = 1,...,m ------------------------
+  ## Save as p_val_num for updates ---------------------------------
+  ## (contributions don't change) ----------------------------------
   p_val_num = rowsum(x = comp_dat_val[, Bspline], 
                      group = comp_dat_val[, "k"], 
                      reorder = TRUE)
@@ -206,9 +210,10 @@ logiSieve = function(analysis_formula, error_formula, data, analysis_link = "log
     ### ------------------------------------------------------ Gradient
     ### Hessian -------------------------------------------------------
     if (analysis_link == "logit") {
-      mu = theta_design_mat %*% prev_theta
-      gradient_theta = matrix(data = c(colSums(w_t * c((comp_dat_all[, Y] - 1 + exp(-mu) / (1 + exp(- mu)))) * theta_design_mat)), ncol = 1)
-      post_multiply = c((exp(- mu) / (1 + exp(- mu))) * (exp(- mu)/(1 + exp(- mu)) - 1)) * w_t * theta_design_mat
+      mu = theta_design_mat %*% prev_theta ## mu = beta0 + beta1X + ... 
+      prob_pi = 1 / (1 + exp(- mu)) ## pi = 1 / (1 + exp(- (beta0 + beta1X + ...)) = 1 / (1 + exp(-mu))
+      gradient_theta = matrix(data = c(colSums(w_t * c((comp_dat_all[, Y] - comp_dat_all[, "N"] * prob_pi)) * theta_design_mat)), ncol = 1)
+      post_multiply = - comp_dat_all[, "N"] * prob_pi * (1 - prob_pi) * w_t * theta_design_mat
       hessian_theta = apply(theta_design_mat, MARGIN = 2, FUN = hessian_row, pm = post_multiply)
       new_theta = tryCatch(expr = prev_theta - solve(hessian_theta) %*% gradient_theta,
                            error = function(err) {
@@ -224,11 +229,11 @@ logiSieve = function(analysis_formula, error_formula, data, analysis_link = "log
     } else if (analysis_link == "log") {
       mu = as.vector(theta_design_mat %*% prev_theta) ## mu = beta0 + beta1X + ... 
       prob_pi = exp(mu) ## pi = exp(beta0 + beta1X + ...) = exp(mu) 
-      r = (comp_dat_all[, Y] - comp_dat_all[, "N"] * prob_pi) / (1 - prob_pi) ## residual = (Y - n x pi) / (1 - pi)
+      r = (comp_dat_all[, Y] - (comp_dat_all[, "N"] * prob_pi)) / (1 - prob_pi) ## residual = (Y - n x pi) / (1 - pi)
       gradient_theta = matrix(data = c(colSums(w_t * theta_design_mat * r)), 
                               ncol = 1) ## sum over w * X * r
-      d = w_t * prob_pi * (comp_dat_all[, "N"] - comp_dat_all[, Y]) / ((1 - prob_pi) ^ 2)
-      post_multiply = d * theta_design_mat
+      post_multiply = w_t * prob_pi * (comp_dat_all[, "N"] - comp_dat_all[, Y]) / 
+        ((1 - prob_pi) ^ 2) * theta_design_mat
       hessian_theta = - apply(X = theta_design_mat, 
                               MARGIN = 2, 
                               FUN = hessian_row, 
@@ -279,7 +284,6 @@ logiSieve = function(analysis_formula, error_formula, data, analysis_link = "log
     ###################################################################
     # M Step ----------------------------------------------------------
     ###################################################################
-
     all_conv = c(theta_conv, p_conv)
     if (mean(all_conv) == 1) { CONVERGED = TRUE }
 
