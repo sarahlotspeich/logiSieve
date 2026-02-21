@@ -205,10 +205,9 @@ logiSieve = function(analysis_formula, error_formula, data, analysis_link = "log
     # M Step ----------------------------------------------------------
     ###################################################################
     ## Update theta using weighted logistic regression ----------------
-    ### Gradient ------------------------------------------------------
+    ### Define weights vector -----------------------------------------
     w_t = c(rep(1, n), as.vector(w_t))
-    ### ------------------------------------------------------ Gradient
-    ### Hessian -------------------------------------------------------
+    ### Attempt a single Newton step ----------------------------------
     if (analysis_link == "logit") {
       mu = theta_design_mat %*% prev_theta ## mu = beta0 + beta1X + ... 
       prob_pi = 1 / (1 + exp(- mu)) ## pi = 1 / (1 + exp(- (beta0 + beta1X + ...)) = 1 / (1 + exp(-mu))
@@ -219,13 +218,7 @@ logiSieve = function(analysis_formula, error_formula, data, analysis_link = "log
                            error = function(err) {
                              matrix(NA, nrow = nrow(prev_theta))
                            })
-      if (any(is.na(new_theta))) {
-        new_theta = suppressWarnings(matrix(glm(formula = analysis_formula, 
-                                                family = binomial(link = analysis_link), 
-                                                data = data.frame(cbind(comp_dat_all, w_t)), 
-                                                weights = w_t)$coefficients, 
-                                            ncol = 1))
-      }
+      
     } else if (analysis_link == "log") {
       mu = as.vector(theta_design_mat %*% prev_theta) ## mu = beta0 + beta1X + ... 
       prob_pi = exp(mu) ## pi = exp(beta0 + beta1X + ...) = exp(mu) 
@@ -238,36 +231,34 @@ logiSieve = function(analysis_formula, error_formula, data, analysis_link = "log
                               MARGIN = 2, 
                               FUN = hessian_row, 
                               pm = post_multiply)
-      new_step = tryCatch(expr = solve(hessian_theta) %*% gradient_theta,
-                          error = function(err) {
-                            matrix(data = NA, 
-                                   nrow = nrow(prev_theta))
-                            }
-                          )
-      theta_candidate = prev_theta - new_step
-      #### Back-tracking if needed 
-      if (!any(is.na(theta_candidate))) {
-        step_factor = 1
-        max_backtrack = 25
-        bt = 0
-        while (any(theta_design_mat %*% theta_candidate > 0) && bt < max_backtrack) {
-          step_factor = step_factor / 2
-          theta_candidate = prev_theta - step_factor * new_step
-          bt = bt + 1
-        }
-        # If still infeasible, fail safely
-        if (any(theta_design_mat %*% theta_candidate > 0)) {
-          theta_candidate = matrix(NA, nrow = nrow(prev_theta))
-        }
-      }
-      new_theta = theta_candidate
-      # if (any(is.na(new_theta))) {
-      #   new_theta = suppressWarnings(matrix(glm(formula = analysis_formula, 
-      #                                           family = binomial(link = analysis_link), 
-      #                                           data = data.frame(cbind(comp_dat_all, w_t)), 
-      #                                           weights = w_t)$coefficients, 
-      #                                       ncol = 1))
+      new_theta = tryCatch(expr = prev_theta - solve(hessian_theta) %*% gradient_theta,
+                           error = function(err) {
+                             matrix(NA, nrow = nrow(prev_theta))
+                           })
+      # #### Back-tracking if needed 
+      # if (!any(is.na(theta_candidate))) {
+      #   step_factor = 1
+      #   max_backtrack = 25
+      #   bt = 0
+      #   while (any(theta_design_mat %*% theta_candidate > 0) && bt < max_backtrack) {
+      #     step_factor = step_factor / 2
+      #     theta_candidate = prev_theta - step_factor * new_step
+      #     bt = bt + 1
+      #   }
+      #   # If still infeasible, fail safely
+      #   if (any(theta_design_mat %*% theta_candidate > 0)) {
+      #     theta_candidate = matrix(NA, nrow = nrow(prev_theta))
+      #   }
       # }
+      # new_theta = theta_candidate
+    }
+    ### If it fails, try using glm() ----------------------------------
+    if (any(is.na(new_theta))) {
+      new_theta = suppressWarnings(matrix(glm(formula = analysis_formula, 
+                                              family = binomial(link = analysis_link), 
+                                              data = data.frame(cbind(comp_dat_all, w_t)), 
+                                              weights = w_t)$coefficients, 
+                                          ncol = 1))
     }
     ### Check for convergence -----------------------------------------
     theta_conv = abs(new_theta - prev_theta) < tol
@@ -293,7 +284,6 @@ logiSieve = function(analysis_formula, error_formula, data, analysis_link = "log
     prev_p = new_p
     #  ------------------------------- Update values for next iteration
   }
-
   rownames(new_theta) = c("Intercept", X_val, C)
 
   if(!CONVERGED) {
