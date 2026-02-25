@@ -212,8 +212,8 @@ logiSieve = function(analysis_formula, error_formula, data, analysis_link = "log
       mu = theta_design_mat %*% prev_theta ## mu = beta0 + beta1X + ... 
       prob_pi = 1 / (1 + exp(- mu)) ## pi = 1 / (1 + exp(- (beta0 + beta1X + ...)) = 1 / (1 + exp(-mu))
       gradient_theta = matrix(data = c(colSums(w_t * c((comp_dat_all[, Y] - comp_dat_all[, "N"] * prob_pi)) * theta_design_mat)), ncol = 1)
-      post_multiply = - comp_dat_all[, "N"] * 
-        prob_pi * (1 - prob_pi) * w_t * theta_design_mat
+      post_multiply = - as.vector(comp_dat_all[, "N"] * 
+        prob_pi * (1 - prob_pi) * w_t) * theta_design_mat
       hessian_theta = apply(X = theta_design_mat, 
                             MARGIN = 2, 
                             FUN = hessian_row, 
@@ -230,8 +230,8 @@ logiSieve = function(analysis_formula, error_formula, data, analysis_link = "log
       r = (comp_dat_all[, Y] - (comp_dat_all[, "N"] * prob_pi)) / (1 - prob_pi) ## residual = (Y - n x pi) / (1 - pi)
       gradient_theta = matrix(data = c(colSums(w_t * theta_design_mat * r)), 
                               ncol = 1) ## sum over w * X * r
-      post_multiply = w_t * prob_pi * (comp_dat_all[, "N"] - comp_dat_all[, Y]) / 
-        ((1 - prob_pi) ^ 2) * theta_design_mat
+      post_multiply = as.numeric(w_t * prob_pi * (comp_dat_all[, "N"] - comp_dat_all[, Y]) / 
+        ((1 - prob_pi) ^ 2)) * theta_design_mat
       hessian_theta = - apply(X = theta_design_mat, 
                               MARGIN = 2, 
                               FUN = hessian_row, 
